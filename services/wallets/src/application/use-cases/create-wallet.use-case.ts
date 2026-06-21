@@ -10,13 +10,13 @@ export type CreateWalletInput = {
 
 export class CreateWalletUseCase {
   constructor(
-    private wallets: WalletsRepository,
+    private repository: WalletsRepository,
     private newId: IdGenerator,
     private newDate: Clock,
   ) {}
 
   async execute(input: CreateWalletInput): Promise<Wallet> {
-    const existingWallet = await this.wallets.findByPlayerId(input.playerId);
+    const existingWallet = await this.repository.findByPlayerId(input.playerId);
 
     if (existingWallet) {
       throw new Error("Wallet already exists for this player");
@@ -34,7 +34,7 @@ export class CreateWalletUseCase {
       updatedAt: now,
     });
 
-    await this.wallets.save(newWallet);
+    await this.repository.save(newWallet);
 
     return newWallet;
   }
