@@ -12,19 +12,19 @@ export class Wallet {
   readonly playerId: string;
   private balanceCents: bigint;
   readonly currency: string;
-  readonly createdAt: Date;
+  private createdAt: Date;
   private updatedAt: Date;
 
   constructor(props: WalletProps) {
-    if (props.id.trim() === "") {
+    if (!props.id || props.id.trim() === "") {
       throw new Error("ID cannot be empty");
     }
 
-    if (props.playerId.trim() === "") {
+    if (!props.playerId || props.playerId.trim() === "") {
       throw new Error("Player ID cannot be empty");
     }
 
-    if (props.currency.trim() === "") {
+    if (!props.currency || props.currency.trim() === "") {
       throw new Error("Currency cannot be empty");
     }
 
@@ -42,6 +42,10 @@ export class Wallet {
 
   getBalanceCents(): bigint {
     return this.balanceCents;
+  }
+
+  getCreatedAt(): Date {
+    return new Date(this.createdAt);
   }
 
   getUpdatedAt(): Date {

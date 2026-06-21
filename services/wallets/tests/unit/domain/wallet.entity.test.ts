@@ -20,8 +20,18 @@ describe("Wallet Entity", () => {
     expect(wallet.playerId).toBe("player-123");
     expect(wallet.getBalanceCents()).toBe(1000n);
     expect(wallet.currency).toBe("USD");
-    expect(wallet.createdAt).toBeDate();
+    expect(wallet.getCreatedAt()).toBeDate();
     expect(wallet.getUpdatedAt()).toBeDate();
+  });
+
+  it("normalizes ID and playerId by trimming whitespace", () => {
+    const wallet = makeWallet({
+      id: "   wallet-123   ",
+      playerId: "   player-123   ",
+    });
+
+    expect(wallet.id).toBe("wallet-123");
+    expect(wallet.playerId).toBe("player-123");
   });
 
   it("normalizes currency to uppercase", () => {
