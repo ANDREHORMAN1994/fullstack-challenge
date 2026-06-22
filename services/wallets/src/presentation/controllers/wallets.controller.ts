@@ -6,18 +6,23 @@ import {
   Get,
   Param,
   Post,
+  UnprocessableEntityException,
 } from "@nestjs/common";
 import { HealthCheckResponseDto } from "@/presentation/dtos/health-check-response.dto";
 import { CreateWalletRequestDto } from "@/presentation/dtos/create-wallet-request.dto";
 import { WalletResponseDto } from "@/presentation/dtos/wallet-response.dto";
+import { DebitBetRequestDto } from "@/presentation/dtos/debit-bet-request.dto";
+import { WalletTransactionResponseDto } from "@/presentation/dtos/wallet-transaction-response.dto";
 import { GetWalletUseCase } from "@/application/use-cases/get-wallet.use-case";
 import { CreateWalletUseCase } from "@/application/use-cases/create-wallet.use-case";
+import { DebitBetUseCase } from "@/application/use-cases/debit-bet.use-case";
 
 @Controller()
 export class WalletsController {
   constructor(
     private readonly createWalletUseCase: CreateWalletUseCase,
     private readonly getWalletUseCase: GetWalletUseCase,
+    private readonly debitBetUseCase: DebitBetUseCase,
   ) {}
 
   @Get("health")
@@ -49,6 +54,32 @@ export class WalletsController {
     } catch (error) {
       if (error instanceof Error && error.message === "Wallet not found") {
         throw new NotFoundException(error.message);
+      }
+      throw error;
+    }
+  }
+
+  @Post("wallets/debit-bet")
+  async createTransactionDebitBet(@Body() body: DebitBetRequestDto) {
+    try {
+      const transaction = await this.debitBetUseCase.execute({
+        playerId: body.playerId,
+        operationId: body.operationId,
+        amountCents: BigInt(body.amountCents),
+        referenceRoundId: body.referenceRoundId,
+        referenceBetId: body.referenceBetId,
+      });
+
+      return new WalletTransactionResponseDto(transaction);
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === "Insufficient balance") {
+          throw new UnprocessableEntityException(error.message);
+        }
+
+        if (error.message === "Wallet not found") {
+          throw new NotFoundException(error.message);
+        }
       }
       throw error;
     }
