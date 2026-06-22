@@ -6,23 +6,23 @@ POST http://localhost:4002/wallets
 Content-Type: application/json
 
 {
-  "playerId": "player-2",
+  "playerId": "player-rmq-1",
   "currency": "BRL"
 }
 
 ### get wallet by playerId /wallets/:playerId
-GET http://localhost:4002/wallets/player-2
+GET http://localhost:4002/wallets/player-rmq-1
 
 ### create transaction /wallets/debit-bet
 POST http://localhost:4002/wallets/debit-bet
 Content-Type: application/json
 
 {
-  "playerId": "player-1",
-  "operationId": "operation-1",
+  "playerId": "player-rmq-1",
+  "operationId": "operation-rmq-debit-1",
   "amountCents": "100",
-  "referenceRoundId": "round-1",
-  "referenceBetId": "bet-1"
+  "referenceRoundId": "round-rmq-1",
+  "referenceBetId": "bet-rmq-1"
 }
 
 ### create transaction /wallets/credit-cashout
@@ -30,9 +30,9 @@ POST http://localhost:4002/wallets/credit-cashout
 Content-Type: application/json
 
 {
-  "playerId": "player-2",
-  "operationId": "operation-2",
+  "playerId": "player-rmq-1",
+  "operationId": "operation-rmq-credit-1",
   "amountCents": "150",
-  "referenceRoundId": "round-1",
-  "referenceBetId": "bet-1"
+  "referenceRoundId": "round-rmq-1",
+  "referenceBetId": "bet-rmq-1"
 }

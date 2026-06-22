@@ -1,5 +1,5 @@
 import { Controller } from "@nestjs/common";
-import { MessagePattern } from "@nestjs/microservices";
+import { Ctx, MessagePattern, Payload, RmqContext } from "@nestjs/microservices";
 import {
   WALLET_MESSAGE_PATTERNS,
   type WalletCreditCashoutRequest,
@@ -18,7 +18,10 @@ export class WalletsMessageController {
   ) {}
 
   @MessagePattern(WALLET_MESSAGE_PATTERNS.debitBet)
-  async debitBet(message: WalletDebitBetRequest): Promise<WalletOperationResponse> {
+  async debitBet(
+    @Payload() message: WalletDebitBetRequest,
+    @Ctx() context?: RmqContext,
+  ): Promise<WalletOperationResponse> {
     try {
       const transaction = await this.debitBetUseCase.execute({
         playerId: message.playerId,
@@ -34,11 +37,16 @@ export class WalletsMessageController {
       };
     } catch (error) {
       return this.mapError(error);
+    } finally {
+      this.ackMessage(context);
     }
   }
 
   @MessagePattern(WALLET_MESSAGE_PATTERNS.creditCashout)
-  async creditCashout(message: WalletCreditCashoutRequest): Promise<WalletOperationResponse> {
+  async creditCashout(
+    @Payload() message: WalletCreditCashoutRequest,
+    @Ctx() context?: RmqContext,
+  ): Promise<WalletOperationResponse> {
     try {
       const transaction = await this.creditCashoutUseCase.execute({
         playerId: message.playerId,
@@ -54,7 +62,20 @@ export class WalletsMessageController {
       };
     } catch (error) {
       return this.mapError(error);
+    } finally {
+      this.ackMessage(context);
     }
+  }
+
+  private ackMessage(context?: RmqContext): void {
+    if (!context) {
+      return;
+    }
+
+    const channel = context.getChannelRef();
+    const originalMessage = context.getMessage();
+
+    channel.ack(originalMessage);
   }
 
   private mapError(error: unknown): WalletOperationResponse {
