@@ -9,7 +9,12 @@
   "scripts": {
     "docker:up": "docker compose up",
     "docker:down": "docker compose down",
-    "docker:prune": "docker compose down -v --rmi all --remove-orphans && docker volume prune -f"
+    "docker:prune": "docker compose down -v --rmi all --remove-orphans && docker volume prune -f",
+    "wallets:typecheck": "cd services/wallets && bunx tsc --noEmit",
+    "wallets:test:unit": "cd services/wallets && bun test tests/unit",
+    "wallets:test:integration": "cd services/wallets && DATABASE_URL=postgresql://admin:admin@localhost:5432/wallets bun test tests/integration",
+    "wallets:test:e2e": "cd services/wallets && DATABASE_URL=postgresql://admin:admin@localhost:5432/wallets bun test tests/e2e",
+    "wallets:test:all": "bun run wallets:typecheck && bun run wallets:test:unit && bun run wallets:test:integration && bun run wallets:test:e2e"
   },
   "devDependencies": {
     "bun-types": "latest"
