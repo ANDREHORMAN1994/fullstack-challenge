@@ -1,6 +1,7 @@
 import { Clock } from "@/application/providers/clock";
 import { IdGenerator } from "@/application/providers/id-generator";
 import { WalletsRepository } from "@/application/repositories/wallets.repository";
+import { WalletTransaction } from "@/domain/entities/wallet-transaction.entity";
 import { Wallet } from "@/domain/entities/wallet.entity";
 
 export class FakeClock extends Clock {
@@ -27,6 +28,7 @@ export class FakeIdGenerator extends IdGenerator {
 
 export class FakeWalletsRepository extends WalletsRepository {
   private wallets: Wallet[] = [];
+  private walletTransactions: WalletTransaction[] = [];
 
   async findById(id: string): Promise<Wallet | null> {
     const wallet = this.wallets.find((w) => w.id === id);
@@ -53,7 +55,31 @@ export class FakeWalletsRepository extends WalletsRepository {
     }
   }
 
+  async findWalletTransactionByOperationId(operationId: string): Promise<WalletTransaction | null> {
+    const transaction = this.walletTransactions.find((t) => t.operationId === operationId);
+    if (!transaction) {
+      return null;
+    }
+    return transaction;
+  }
+
+  async saveWalletTransaction(wallet: Wallet, transaction: WalletTransaction): Promise<void> {
+    const existingIndex = this.walletTransactions.findIndex(
+      (t) => t.operationId === transaction.operationId,
+    );
+    if (existingIndex !== -1) {
+      this.walletTransactions[existingIndex] = transaction;
+    } else {
+      await this.save(wallet);
+      this.walletTransactions.push(transaction);
+    }
+  }
+
   getWallets(): Wallet[] {
     return this.wallets;
+  }
+
+  getWalletTransactions(): WalletTransaction[] {
+    return this.walletTransactions;
   }
 }
