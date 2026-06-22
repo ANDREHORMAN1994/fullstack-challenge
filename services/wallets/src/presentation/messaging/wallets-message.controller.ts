@@ -17,7 +17,7 @@ export class WalletsMessageController {
     private readonly creditCashoutUseCase: CreditCashoutUseCase,
   ) {}
 
-  @MessagePattern(WALLET_MESSAGE_PATTERNS.debitBet)
+  @MessagePattern(WALLET_MESSAGE_PATTERNS.DEBIT_BET)
   async debitBet(
     @Payload() message: WalletDebitBetRequest,
     @Ctx() context?: RmqContext,
@@ -42,7 +42,7 @@ export class WalletsMessageController {
     }
   }
 
-  @MessagePattern(WALLET_MESSAGE_PATTERNS.creditCashout)
+  @MessagePattern(WALLET_MESSAGE_PATTERNS.CREDIT_CASHOUT)
   async creditCashout(
     @Payload() message: WalletCreditCashoutRequest,
     @Ctx() context?: RmqContext,

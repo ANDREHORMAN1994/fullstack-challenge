@@ -42,7 +42,7 @@ async function main(): Promise<void> {
 
   const creditResponse = await firstValueFrom(
     client.send<WalletOperationResponse, WalletCreditCashoutRequest>(
-      WALLET_MESSAGE_PATTERNS.creditCashout,
+      WALLET_MESSAGE_PATTERNS.CREDIT_CASHOUT,
       creditMessage,
     ),
   );
@@ -60,7 +60,7 @@ async function main(): Promise<void> {
 
   const debitResponse = await firstValueFrom(
     client.send<WalletOperationResponse, WalletDebitBetRequest>(
-      WALLET_MESSAGE_PATTERNS.debitBet,
+      WALLET_MESSAGE_PATTERNS.DEBIT_BET,
       debitMessage,
     ),
   );

@@ -9,7 +9,6 @@
     "target": "ES2021",
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "./src",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
@@ -17,7 +16,7 @@
     "strictBindCallApply": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["node", "bun-types"],
+    "types": ["bun-types"],
     "paths": {
       "@/*": ["./src/*"]
     }

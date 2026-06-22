@@ -1,6 +1,6 @@
 export const WALLET_MESSAGE_PATTERNS = {
-  debitBet: "wallets.debit-bet",
-  creditCashout: "wallets.credit-cashout",
+  DEBIT_BET: "wallets.debit-bet",
+  CREDIT_CASHOUT: "wallets.credit-cashout",
 } as const;
 
 export type WalletMessagePattern =
