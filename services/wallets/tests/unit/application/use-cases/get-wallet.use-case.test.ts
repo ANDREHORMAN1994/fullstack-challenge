@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { GetWalletUseCase } from "@/application/use-cases/get-wallet.use-case";
 import { Wallet } from "@/domain/entities/wallet.entity";
-import { FakeWalletsRepository } from "./utils.use-case";
+import { FakeWalletsRepository } from "../../utils/use-case-fakes";
 
 describe("Check GetWalletUseCase works", () => {
   it("throws error when wallet doesn't exist", async () => {

@@ -1,6 +1,6 @@
 import { CreateWalletUseCase } from "@/application/use-cases/create-wallet.use-case";
 import { describe, expect, it } from "bun:test";
-import { FakeClock, FakeIdGenerator, FakeWalletsRepository } from "./utils.use-case";
+import { FakeClock, FakeIdGenerator, FakeWalletsRepository } from "../../utils/use-case-fakes";
 
 const makeInstances = (ids: string[]) => {
   const clock = new FakeClock();

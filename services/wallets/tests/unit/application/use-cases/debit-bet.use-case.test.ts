@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { FakeClock, FakeIdGenerator, FakeWalletsRepository } from "./utils.use-case";
+import { FakeClock, FakeIdGenerator, FakeWalletsRepository } from "../../utils/use-case-fakes";
 import { DebitBetUseCase } from "@/application/use-cases/debit-bet.use-case";
 import { Wallet, WalletProps } from "@/domain/entities/wallet.entity";
 import { Clock } from "@/application/providers/clock";

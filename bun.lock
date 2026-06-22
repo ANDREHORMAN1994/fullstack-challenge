@@ -36,8 +36,10 @@
       "name": "@crash/wallets",
       "version": "0.0.1",
       "dependencies": {
+        "@crash/contracts": "workspace:*",
         "@nestjs/common": "^11.1.17",
         "@nestjs/core": "^11.1.17",
+        "@nestjs/microservices": "^11.1.17",
         "@nestjs/platform-express": "^11.1.17",
         "@prisma/adapter-pg": "^7.8.0",
         "@prisma/client": "^7.8.0",
@@ -82,6 +84,8 @@
     "@nestjs/common": ["@nestjs/common@11.1.27", "", { "dependencies": { "file-type": "21.3.4", "iterare": "1.2.1", "load-esm": "1.0.3", "tslib": "2.8.1", "uid": "2.0.2" }, "peerDependencies": { "class-transformer": ">=0.4.1", "class-validator": ">=0.13.2", "reflect-metadata": "^0.1.12 || ^0.2.0", "rxjs": "^7.1.0" }, "optionalPeers": ["class-transformer", "class-validator"] }, "sha512-kEGSzqM2lWr4whh4Ubflw+oPZSEzxvRMu9WL+LveZploJWTjec5bBlCiRVlVzTPg2kIwBiLwWSvCCW7Wnin1gg=="],
 
     "@nestjs/core": ["@nestjs/core@11.1.27", "", { "dependencies": { "fast-safe-stringify": "2.1.1", "iterare": "1.2.1", "path-to-regexp": "8.4.2", "tslib": "2.8.1", "uid": "2.0.2" }, "peerDependencies": { "@nestjs/common": "^11.0.0", "@nestjs/microservices": "^11.0.0", "@nestjs/platform-express": "^11.0.0", "@nestjs/websockets": "^11.0.0", "reflect-metadata": "^0.1.12 || ^0.2.0", "rxjs": "^7.1.0" }, "optionalPeers": ["@nestjs/microservices", "@nestjs/platform-express", "@nestjs/websockets"] }, "sha512-K6DX7hcqmZdeXkv7tsPakKBRCgqL19a4mtbX4FluY0hWtFdtPKp6lbe+lb8gWPfvLdbOWr/CPScn7BSjBX+Ecg=="],
+
+    "@nestjs/microservices": ["@nestjs/microservices@11.1.27", "", { "dependencies": { "iterare": "1.2.1", "tslib": "2.8.1" }, "peerDependencies": { "@grpc/grpc-js": "*", "@nestjs/common": "^11.0.0", "@nestjs/core": "^11.0.0", "@nestjs/websockets": "^11.0.0", "amqp-connection-manager": "*", "amqplib": "*", "cache-manager": "*", "ioredis": "*", "kafkajs": "*", "mqtt": "*", "nats": "*", "reflect-metadata": "^0.1.12 || ^0.2.0", "rxjs": "^7.1.0" }, "optionalPeers": ["@grpc/grpc-js", "@nestjs/websockets", "amqp-connection-manager", "amqplib", "cache-manager", "ioredis", "kafkajs", "mqtt", "nats"] }, "sha512-wVUuNNFxILFtG6CvzvdcF/2/CtwWTKNR8AXsHzH7+JKoJY1xAXqvw8b6LArUKyRpOfsiKMLCC/KKvvA4Enh/xg=="],
 
     "@nestjs/platform-express": ["@nestjs/platform-express@11.1.27", "", { "dependencies": { "cors": "2.8.6", "express": "5.2.1", "multer": "2.1.1", "path-to-regexp": "8.4.2", "tslib": "2.8.1" }, "peerDependencies": { "@nestjs/common": "^11.0.0", "@nestjs/core": "^11.0.0" } }, "sha512-0ZFhz6H6EdGh4xQVbUNwjoAwBuz73P7FvUAl67h9CTdMqQlJDaQYJApBv8pKfVZ1fGjMCbl0m9DcC6pXaZPWSQ=="],
 
