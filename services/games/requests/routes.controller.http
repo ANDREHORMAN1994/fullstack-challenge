@@ -1,0 +1,13 @@
+### /health
+GET http://localhost:4001/health
+
+### place bet /games/bets
+POST http://localhost:4001/games/bets
+Content-Type: application/json
+
+{
+  "playerId": "player-rmq-1",
+  "roundId": "round-rmq-1",
+  "betId": "bet-rmq-1",
+  "amountCents": "250"
+}

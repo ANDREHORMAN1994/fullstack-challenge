@@ -1,3 +1,4 @@
+import { Injectable } from "@nestjs/common";
 import { WalletClient } from "../clients/wallet.client";
 
 export type PlaceBetInput = {
@@ -17,6 +18,7 @@ export type PlaceBetOutput = {
   walletBalanceAfterCents: string;
 };
 
+@Injectable()
 export class PlaceBetUseCase {
   constructor(private walletClient: WalletClient) {}
 
