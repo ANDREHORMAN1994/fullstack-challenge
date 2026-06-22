@@ -2,6 +2,7 @@ import { WalletsRepository } from "@/application/repositories/wallets.repository
 import { WalletTransaction } from "@/domain/entities/wallet-transaction.entity";
 import { Clock } from "@/application/providers/clock";
 import { IdGenerator } from "@/application/providers/id-generator";
+import { Injectable } from "@nestjs/common";
 
 export type CreditCashoutInput = {
   playerId: string;
@@ -11,6 +12,7 @@ export type CreditCashoutInput = {
   referenceBetId: string;
 };
 
+@Injectable()
 export class CreditCashoutUseCase {
   constructor(
     private repository: WalletsRepository,

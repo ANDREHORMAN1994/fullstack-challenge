@@ -2,12 +2,14 @@ import { Clock } from "@/application/providers/clock";
 import { IdGenerator } from "@/application/providers/id-generator";
 import { WalletsRepository } from "@/application/repositories/wallets.repository";
 import { Wallet } from "@/domain/entities/wallet.entity";
+import { Injectable } from "@nestjs/common";
 
 export type CreateWalletInput = {
   playerId: string;
   currency?: string;
 };
 
+@Injectable()
 export class CreateWalletUseCase {
   constructor(
     private repository: WalletsRepository,

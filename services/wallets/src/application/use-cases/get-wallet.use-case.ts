@@ -1,10 +1,12 @@
 import { Wallet } from "@/domain/entities/wallet.entity";
 import { WalletsRepository } from "@/application/repositories/wallets.repository";
+import { Injectable } from "@nestjs/common";
 
 export type GetWalletInput = {
   playerId: string;
 };
 
+@Injectable()
 export class GetWalletUseCase {
   constructor(private repository: WalletsRepository) {}
 

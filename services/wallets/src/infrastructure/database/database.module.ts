@@ -11,6 +11,6 @@ import { WalletsRepository } from "@/application/repositories/wallets.repository
       useClass: PrismaWalletsRepository,
     },
   ],
-  exports: [PrismaService, WalletsRepository],
+  exports: [WalletsRepository],
 })
 export class DatabaseModule {}
