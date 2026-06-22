@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "bun run --watch src/main.ts",
     "start": "bun run src/main.ts",
-    "test": "bun test tests/unit",
+    "test:unit": "bun test tests/unit",
+    "test:integration": "bun test tests/integration",
     "test:e2e": "bun test tests/e2e"
   },
   "dependencies": {
