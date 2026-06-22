@@ -1,0 +1,14 @@
+### /health
+GET http://localhost:4002/health
+
+### create wallet /wallets
+POST http://localhost:4002/wallets
+Content-Type: application/json
+
+{
+  "playerId": "player-2",
+  "currency": "BRL"
+}
+
+### get wallet by playerId /wallets/:playerId
+GET http://localhost:4002/wallets/player-2
