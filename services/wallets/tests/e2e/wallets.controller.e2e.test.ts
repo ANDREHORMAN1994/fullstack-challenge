@@ -42,7 +42,7 @@ describe("WalletsController E2E", () => {
     await app.close();
   });
 
-  it("test /health data", async () => {
+  it("GET /health - check services on", async () => {
     const response = await fetch(`${baseUrl}/health`);
     expect(response.status).toBe(200);
 
@@ -54,7 +54,7 @@ describe("WalletsController E2E", () => {
     });
   });
 
-  it("creates a wallet", async () => {
+  it("POST /wallets - creates a wallet", async () => {
     const response = await fetch(`${baseUrl}/wallets`, {
       method: "POST",
       headers: {
@@ -78,7 +78,7 @@ describe("WalletsController E2E", () => {
     expect(body).toHaveProperty("updatedAt");
   });
 
-  it("finds a wallet by playerId", async () => {
+  it("POST /wallets - finds a wallet by playerId", async () => {
     await fetch(`${baseUrl}/wallets`, {
       method: "POST",
       headers: {
@@ -104,7 +104,7 @@ describe("WalletsController E2E", () => {
     expect(body).toHaveProperty("updatedAt");
   });
 
-  it("returns conflict when creating a wallet for an existing player", async () => {
+  it("POST /wallets - returns conflict when creating a wallet for an existing player", async () => {
     const payload = {
       playerId: "player-1",
       currency: "BRL",
@@ -135,7 +135,7 @@ describe("WalletsController E2E", () => {
     expect(body).toHaveProperty("message", "Wallet already exists for this player");
   });
 
-  it("returns not found when wallet does not exist", async () => {
+  it("GET /wallets/:playerId - returns not found when wallet does not exist", async () => {
     const response = await fetch(`${baseUrl}/wallets/player-not-found`);
 
     expect(response.status).toBe(404);
@@ -147,7 +147,7 @@ describe("WalletsController E2E", () => {
     expect(body).toHaveProperty("message", "Wallet not found");
   });
 
-  it("returns bad request when create wallet payload is invalid", async () => {
+  it("POST /wallets - returns bad request when create wallet payload is invalid", async () => {
     const response = await fetch(`${baseUrl}/wallets`, {
       method: "POST",
       headers: {
@@ -170,7 +170,7 @@ describe("WalletsController E2E", () => {
     expect(body.message).toContain("playerId must be a string");
   });
 
-  it("check /wallets/debit-bet make two calls with the same operationId and debit only once", async () => {
+  it("POST /wallets/debit-bet - make two calls with the same operationId and debit only once", async () => {
     await prisma.wallet.create({
       data: {
         id: "wallet-1",
@@ -243,7 +243,7 @@ describe("WalletsController E2E", () => {
     expect(transactions).toHaveLength(1);
   });
 
-  it("check /wallets/debit-bet and throw error Insufficient balance", async () => {
+  it("POST /wallets/debit-bet - throw error Insufficient balance", async () => {
     await prisma.wallet.create({
       data: {
         id: "wallet-1",
@@ -277,7 +277,7 @@ describe("WalletsController E2E", () => {
     expect(data).toHaveProperty("message", "Insufficient balance");
   });
 
-  it("check /wallets/debit-bet and throw error Wallet not found", async () => {
+  it("POST /wallets/debit-bet - throw error Wallet not found", async () => {
     const body = {
       playerId: "player-1",
       operationId: "operation-1",
@@ -300,12 +300,127 @@ describe("WalletsController E2E", () => {
     expect(data).toHaveProperty("message", "Wallet not found");
   });
 
-  it("check /wallets/debit-bet and throw error Bad Request", async () => {
+  it("POST /wallets/debit-bet - throw error Bad Request", async () => {
     const body = {
       abc: "abc",
     };
 
     const response = await fetch(`${baseUrl}/wallets/debit-bet`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    expect(response.status).toBe(400);
+
+    const data = await response.json();
+    expect(data).toHaveProperty("error", "Bad Request");
+  });
+
+  it("POST /wallets/credit-cashout - make two calls with the same operationId and credit only once", async () => {
+    await prisma.wallet.create({
+      data: {
+        id: "wallet-1",
+        playerId: "player-1",
+        currency: "BRL",
+        balanceCents: 0n,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+    const wallet1 = await prisma.wallet.findUnique({
+      where: { playerId: "player-1" },
+    });
+
+    expect(wallet1).not.toBeNull();
+    expect(wallet1?.balanceCents).toBe(0n);
+
+    const body = {
+      playerId: "player-1",
+      operationId: "operation-1",
+      amountCents: "250",
+      referenceRoundId: "round-1",
+      referenceBetId: "bet-1",
+    };
+
+    const response1 = await fetch(`${baseUrl}/wallets/credit-cashout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    expect(response1.status).toBe(201);
+    const responseBody1 = await response1.json();
+
+    const response2 = await fetch(`${baseUrl}/wallets/credit-cashout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    expect(response2.status).toBe(201);
+    const responseBody2 = await response2.json();
+
+    expect(responseBody1.id).toBe(responseBody2.id);
+    expect(responseBody1.operationId).toBe("operation-1");
+    expect(responseBody2.operationId).toBe("operation-1");
+    expect(responseBody1.type).toBe("CASHOUT_CREDIT");
+    expect(responseBody1.amountCents).toBe("250");
+    expect(responseBody1.balanceBeforeCents).toBe("0");
+    expect(responseBody1.balanceAfterCents).toBe("250");
+    expect(responseBody2.balanceBeforeCents).toBe("0");
+    expect(responseBody2.balanceAfterCents).toBe("250");
+
+    const wallet2 = await prisma.wallet.findUnique({
+      where: { playerId: "player-1" },
+    });
+
+    expect(wallet2).not.toBeNull();
+    expect(wallet2?.balanceCents).toBe(250n);
+
+    const transactions = await prisma.walletTransaction.findMany({
+      where: { operationId: "operation-1" },
+    });
+
+    expect(transactions).toHaveLength(1);
+  });
+
+  it("POST /wallets/credit-cashout - throw error Wallet not found", async () => {
+    const body = {
+      playerId: "player-1",
+      operationId: "operation-1",
+      amountCents: "250",
+      referenceRoundId: "round-1",
+      referenceBetId: "bet-1",
+    };
+
+    const response = await fetch(`${baseUrl}/wallets/credit-cashout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    expect(response.status).toBe(404);
+
+    const data = await response.json();
+    expect(data).toHaveProperty("message", "Wallet not found");
+  });
+
+  it("POST /wallets/credit-cashout - throw error Bad Request", async () => {
+    const body = {
+      abc: "abc",
+    };
+
+    const response = await fetch(`${baseUrl}/wallets/credit-cashout`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsString, Matches } from "class-validator";
 
-export class DebitBetRequestDto {
+export class WalletTransactionRequestDto {
   @IsString()
   @IsNotEmpty()
   playerId!: string;

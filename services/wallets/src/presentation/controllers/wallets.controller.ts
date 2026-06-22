@@ -11,11 +11,12 @@ import {
 import { HealthCheckResponseDto } from "@/presentation/dtos/health-check-response.dto";
 import { CreateWalletRequestDto } from "@/presentation/dtos/create-wallet-request.dto";
 import { WalletResponseDto } from "@/presentation/dtos/wallet-response.dto";
-import { DebitBetRequestDto } from "@/presentation/dtos/debit-bet-request.dto";
+import { WalletTransactionRequestDto } from "@/presentation/dtos/wallet-transaction-request.dto";
 import { WalletTransactionResponseDto } from "@/presentation/dtos/wallet-transaction-response.dto";
 import { GetWalletUseCase } from "@/application/use-cases/get-wallet.use-case";
 import { CreateWalletUseCase } from "@/application/use-cases/create-wallet.use-case";
 import { DebitBetUseCase } from "@/application/use-cases/debit-bet.use-case";
+import { CreditCashoutUseCase } from "@/application/use-cases/credit-cashout.use-case";
 
 @Controller()
 export class WalletsController {
@@ -23,6 +24,7 @@ export class WalletsController {
     private readonly createWalletUseCase: CreateWalletUseCase,
     private readonly getWalletUseCase: GetWalletUseCase,
     private readonly debitBetUseCase: DebitBetUseCase,
+    private readonly creditCashoutUseCase: CreditCashoutUseCase,
   ) {}
 
   @Get("health")
@@ -60,7 +62,7 @@ export class WalletsController {
   }
 
   @Post("wallets/debit-bet")
-  async createTransactionDebitBet(@Body() body: DebitBetRequestDto) {
+  async createTransactionDebitBet(@Body() body: WalletTransactionRequestDto) {
     try {
       const transaction = await this.debitBetUseCase.execute({
         playerId: body.playerId,
@@ -80,6 +82,26 @@ export class WalletsController {
         if (error.message === "Wallet not found") {
           throw new NotFoundException(error.message);
         }
+      }
+      throw error;
+    }
+  }
+
+  @Post("wallets/credit-cashout")
+  async createTransactionCreditCashout(@Body() body: WalletTransactionRequestDto) {
+    try {
+      const transaction = await this.creditCashoutUseCase.execute({
+        playerId: body.playerId,
+        operationId: body.operationId,
+        amountCents: BigInt(body.amountCents),
+        referenceRoundId: body.referenceRoundId,
+        referenceBetId: body.referenceBetId,
+      });
+
+      return new WalletTransactionResponseDto(transaction);
+    } catch (error) {
+      if (error instanceof Error && error.message === "Wallet not found") {
+        throw new NotFoundException(error.message);
       }
       throw error;
     }
