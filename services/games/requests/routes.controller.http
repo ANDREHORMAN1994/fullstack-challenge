@@ -12,6 +12,9 @@ Content-Type: application/json
 ### GET CURRENT ROUND - CONFIRM THE ROUND IS IN BETTING PHASE
 GET http://localhost:4001/games/rounds/current
 
+### GET ROUNDS HISTORY - LIST FINISHED ROUNDS
+GET http://localhost:4001/games/rounds/history?page=1&limit=20
+
 ### PLACE BET - BET INTO THE CURRENT BETTING ROUND
 POST http://localhost:4001/games/bet
 Content-Type: application/json
@@ -35,6 +38,9 @@ Content-Type: application/json
 {
   "playerId": "player-rmq-1"
 }
+
+### GET MY BETS HISTORY - TEMPORARY PLAYER ID UNTIL JWT AUTH BLOCK
+GET http://localhost:4001/games/bets/me?playerId=player-rmq-1&page=1&limit=20
 
 ### CRASH CURRENT ROUND - STOP THE MULTIPLIER AT THE CRASH POINT
 POST http://localhost:4001/games/rounds/current/crash

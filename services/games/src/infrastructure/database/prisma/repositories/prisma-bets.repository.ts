@@ -1,5 +1,8 @@
 import { Injectable } from "@nestjs/common";
-import { BetsRepository } from "@/application/repositories/bet.repository";
+import {
+  BetsRepository,
+  type ListBetsByPlayerInput,
+} from "@/application/repositories/bet.repository";
 import { Bet } from "@/domain/entities/bet.entity";
 import { BetPrismaMapper } from "../mappers/bet-prisma.mapper";
 import { PrismaService } from "../prisma.service";
@@ -44,5 +47,16 @@ export class PrismaBetsRepository extends BetsRepository {
     if (!bet) return null;
 
     return BetPrismaMapper.toDomain(bet);
+  }
+
+  async findManyByPlayerId(input: ListBetsByPlayerInput): Promise<Bet[]> {
+    const bets = await this.prisma.bet.findMany({
+      where: { playerId: input.playerId },
+      orderBy: { createdAt: "desc" },
+      take: input.limit,
+      skip: input.offset,
+    });
+
+    return bets.map(BetPrismaMapper.toDomain);
   }
 }

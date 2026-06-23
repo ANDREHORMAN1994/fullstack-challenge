@@ -60,6 +60,17 @@ export class FakeBetRepository extends BetsRepository {
     return this.bets.filter((bet) => bet.roundId === roundId) ?? [];
   }
 
+  async findManyByPlayerId(input: {
+    playerId: string;
+    limit: number;
+    offset: number;
+  }): Promise<Bet[]> {
+    return this.bets
+      .filter((bet) => bet.playerId === input.playerId)
+      .sort((left, right) => right.getCreatedAt().getTime() - left.getCreatedAt().getTime())
+      .slice(input.offset, input.offset + input.limit);
+  }
+
   getBets() {
     return this.bets;
   }
@@ -99,6 +110,16 @@ export class FakeRoundsRepository extends RoundsRepository {
         .sort((left, right) => right.getCreatedAt().getTime() - left.getCreatedAt().getTime())[0] ??
       null
     );
+  }
+
+  async findHistory(input: { limit: number; offset: number }): Promise<Round[]> {
+    return [...this.rounds]
+      .filter((round) => ["CRASHED", "SETTLED"].includes(round.getStatus()))
+      .sort(
+        (left, right) =>
+          (right.getCrashedAt()?.getTime() ?? 0) - (left.getCrashedAt()?.getTime() ?? 0),
+      )
+      .slice(input.offset, input.offset + input.limit);
   }
 }
 

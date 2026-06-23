@@ -95,6 +95,71 @@ describe("PrismaBetsRepository", () => {
     expect(bets.map((bet) => bet.id)).toEqual(["bet-1", "bet-2"]);
   });
 
+  it("lists bets from a player ordered by latest creation date", async () => {
+    await repository.create(
+      makeBet({
+        id: "bet-old",
+        playerId: "player-1",
+        roundId: "round-1",
+        createdAt: new Date("2026-01-01T00:00:01.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:01.000Z"),
+      }),
+    );
+    await repository.create(
+      makeBet({
+        id: "bet-new",
+        playerId: "player-1",
+        roundId: "round-2",
+        createdAt: new Date("2026-01-01T00:00:02.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:02.000Z"),
+      }),
+    );
+    await repository.create(
+      makeBet({
+        id: "bet-other-player",
+        playerId: "player-2",
+        roundId: "round-3",
+      }),
+    );
+
+    const bets = await repository.findManyByPlayerId({
+      playerId: "player-1",
+      limit: 10,
+      offset: 0,
+    });
+
+    expect(bets.map((bet) => bet.id)).toEqual(["bet-new", "bet-old"]);
+  });
+
+  it("paginates bets from a player", async () => {
+    await repository.create(
+      makeBet({
+        id: "bet-old",
+        playerId: "player-1",
+        roundId: "round-1",
+        createdAt: new Date("2026-01-01T00:00:01.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:01.000Z"),
+      }),
+    );
+    await repository.create(
+      makeBet({
+        id: "bet-new",
+        playerId: "player-1",
+        roundId: "round-2",
+        createdAt: new Date("2026-01-01T00:00:02.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:02.000Z"),
+      }),
+    );
+
+    const bets = await repository.findManyByPlayerId({
+      playerId: "player-1",
+      limit: 1,
+      offset: 1,
+    });
+
+    expect(bets.map((bet) => bet.id)).toEqual(["bet-old"]);
+  });
+
   it("hydrates a cashed out bet with multiplier and payout", async () => {
     const bet = makeBet({
       id: "bet-cashed-out",

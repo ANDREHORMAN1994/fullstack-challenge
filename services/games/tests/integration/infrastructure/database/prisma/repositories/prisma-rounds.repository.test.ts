@@ -146,4 +146,40 @@ describe("PrismaRoundsRepository", () => {
 
     expect(currentRound).toBeNull();
   });
+
+  it("lists crashed and settled rounds ordered by latest crash date", async () => {
+    const crashedRound = makeRound({ id: "round-crashed" });
+    crashedRound.startRunning(new Date("2026-01-01T00:00:10.000Z"));
+    crashedRound.crash(new Date("2026-01-01T00:00:20.000Z"));
+
+    const settledRound = makeRound({ id: "round-settled" });
+    settledRound.startRunning(new Date("2026-01-01T00:01:10.000Z"));
+    settledRound.crash(new Date("2026-01-01T00:01:20.000Z"));
+    settledRound.settle(new Date("2026-01-01T00:01:30.000Z"));
+
+    await repository.save(makeRound({ id: "round-active" }));
+    await repository.save(crashedRound);
+    await repository.save(settledRound);
+
+    const rounds = await repository.findHistory({ limit: 10, offset: 0 });
+
+    expect(rounds.map((round) => round.id)).toEqual(["round-settled", "round-crashed"]);
+  });
+
+  it("paginates historical rounds", async () => {
+    const oldRound = makeRound({ id: "round-old" });
+    oldRound.startRunning(new Date("2026-01-01T00:00:10.000Z"));
+    oldRound.crash(new Date("2026-01-01T00:00:20.000Z"));
+
+    const newRound = makeRound({ id: "round-new" });
+    newRound.startRunning(new Date("2026-01-01T00:01:10.000Z"));
+    newRound.crash(new Date("2026-01-01T00:01:20.000Z"));
+
+    await repository.save(oldRound);
+    await repository.save(newRound);
+
+    const rounds = await repository.findHistory({ limit: 1, offset: 1 });
+
+    expect(rounds.map((round) => round.id)).toEqual(["round-old"]);
+  });
 });

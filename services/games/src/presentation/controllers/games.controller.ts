@@ -6,6 +6,7 @@ import {
   NotFoundException,
   Param,
   Post,
+  Query,
   UnprocessableEntityException,
 } from "@nestjs/common";
 import { HealthCheckResponseDto } from "../dtos/health-check-response.dto";
@@ -25,6 +26,12 @@ import { SettleCurrentRoundUseCase } from "@/application/use-cases/settle-curren
 import { SettleCurrentRoundResponseDto } from "../dtos/settle-current-round-response.dto";
 import { GetRoundVerificationUseCase } from "@/application/use-cases/get-round-verification.use-case";
 import { RoundVerificationResponseDto } from "../dtos/round-verification-response.dto";
+import { GetRoundsHistoryUseCase } from "@/application/use-cases/get-rounds-history.use-case";
+import { GetMyBetsHistoryUseCase } from "@/application/use-cases/get-my-bets-history.use-case";
+import { PaginationQueryDto } from "../dtos/pagination-query.dto";
+import { RoundsHistoryResponseDto } from "../dtos/rounds-history-response.dto";
+import { MyBetsHistoryQueryDto } from "../dtos/my-bets-history-query.dto";
+import { MyBetsHistoryResponseDto } from "../dtos/my-bets-history-response.dto";
 
 @Controller()
 export class GamesController {
@@ -37,6 +44,8 @@ export class GamesController {
     private readonly crashCurrentRoundUseCase: CrashCurrentRoundUseCase,
     private readonly settleCurrentRoundUseCase: SettleCurrentRoundUseCase,
     private readonly getRoundVerificationUseCase: GetRoundVerificationUseCase,
+    private readonly getRoundsHistoryUseCase: GetRoundsHistoryUseCase,
+    private readonly getMyBetsHistoryUseCase: GetMyBetsHistoryUseCase,
   ) {}
 
   @Get("health")
@@ -53,6 +62,31 @@ export class GamesController {
     }
 
     return new RoundResponseDto(round);
+  }
+
+  @Get("games/rounds/history")
+  async getRoundsHistory(
+    @Query() query: PaginationQueryDto,
+  ): Promise<RoundsHistoryResponseDto> {
+    const history = await this.getRoundsHistoryUseCase.execute({
+      page: query.page,
+      limit: query.limit,
+    });
+
+    return new RoundsHistoryResponseDto(history);
+  }
+
+  @Get("games/bets/me")
+  async getMyBetsHistory(
+    @Query() query: MyBetsHistoryQueryDto,
+  ): Promise<MyBetsHistoryResponseDto> {
+    const history = await this.getMyBetsHistoryUseCase.execute({
+      playerId: query.playerId,
+      page: query.page,
+      limit: query.limit,
+    });
+
+    return new MyBetsHistoryResponseDto(history);
   }
 
   @Post("games/rounds")

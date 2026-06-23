@@ -25,6 +25,15 @@ import {
   GetRoundVerificationUseCase,
   type RoundVerificationOutput,
 } from "@/application/use-cases/get-round-verification.use-case";
+import {
+  GetRoundsHistoryUseCase,
+  type GetRoundsHistoryOutput,
+} from "@/application/use-cases/get-rounds-history.use-case";
+import {
+  GetMyBetsHistoryUseCase,
+  type GetMyBetsHistoryInput,
+  type GetMyBetsHistoryOutput,
+} from "@/application/use-cases/get-my-bets-history.use-case";
 
 class FakePlaceBetUseCase {
   calls: PlaceBetInput[] = [];
@@ -192,6 +201,67 @@ class FakeGetRoundVerificationUseCase {
   }
 }
 
+class FakeGetRoundsHistoryUseCase {
+  calls: Array<{ page?: number; limit?: number }> = [];
+
+  async execute(input: { page?: number; limit?: number }): Promise<GetRoundsHistoryOutput> {
+    this.calls.push(input);
+
+    return {
+      items: [
+        {
+          roundId: "round-1",
+          status: "SETTLED",
+          crashMultiplierBps: 250,
+          serverSeedHash: "server-seed-hash",
+          clientSeed: "client-seed",
+          nonce: 1,
+          bettingStartedAt: "2026-01-01T00:00:00.000Z",
+          runningStartedAt: "2026-01-01T00:00:10.000Z",
+          crashedAt: "2026-01-01T00:00:20.000Z",
+          settledAt: "2026-01-01T00:00:30.000Z",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:30.000Z",
+        },
+      ],
+      pagination: {
+        page: input.page ?? 1,
+        limit: input.limit ?? 20,
+        hasNextPage: false,
+      },
+    };
+  }
+}
+
+class FakeGetMyBetsHistoryUseCase {
+  calls: GetMyBetsHistoryInput[] = [];
+
+  async execute(input: GetMyBetsHistoryInput): Promise<GetMyBetsHistoryOutput> {
+    this.calls.push(input);
+
+    return {
+      items: [
+        {
+          betId: "bet-1",
+          playerId: input.playerId,
+          roundId: "round-1",
+          amountCents: "250",
+          status: "CASHED_OUT",
+          cashoutMultiplierBps: 150,
+          payoutCents: "375",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:15.000Z",
+        },
+      ],
+      pagination: {
+        page: input.page ?? 1,
+        limit: input.limit ?? 20,
+        hasNextPage: false,
+      },
+    };
+  }
+}
+
 @Module({
   controllers: [GamesController],
   providers: [
@@ -227,6 +297,14 @@ class FakeGetRoundVerificationUseCase {
       provide: GetRoundVerificationUseCase,
       useClass: FakeGetRoundVerificationUseCase,
     },
+    {
+      provide: GetRoundsHistoryUseCase,
+      useClass: FakeGetRoundsHistoryUseCase,
+    },
+    {
+      provide: GetMyBetsHistoryUseCase,
+      useClass: FakeGetMyBetsHistoryUseCase,
+    },
   ],
 })
 class TestAppModule {}
@@ -242,6 +320,8 @@ describe("GamesController E2E", () => {
   let crashCurrentRoundUseCase: FakeCrashCurrentRoundUseCase;
   let settleCurrentRoundUseCase: FakeSettleCurrentRoundUseCase;
   let getRoundVerificationUseCase: FakeGetRoundVerificationUseCase;
+  let getRoundsHistoryUseCase: FakeGetRoundsHistoryUseCase;
+  let getMyBetsHistoryUseCase: FakeGetMyBetsHistoryUseCase;
 
   beforeAll(async () => {
     app = await NestFactory.create(TestAppModule, { logger: false });
@@ -271,6 +351,8 @@ describe("GamesController E2E", () => {
     crashCurrentRoundUseCase = app.get(CrashCurrentRoundUseCase);
     settleCurrentRoundUseCase = app.get(SettleCurrentRoundUseCase);
     getRoundVerificationUseCase = app.get(GetRoundVerificationUseCase);
+    getRoundsHistoryUseCase = app.get(GetRoundsHistoryUseCase);
+    getMyBetsHistoryUseCase = app.get(GetMyBetsHistoryUseCase);
   });
 
   afterAll(async () => {
@@ -310,6 +392,76 @@ describe("GamesController E2E", () => {
     expect(body).toHaveProperty("statusCode", 404);
     expect(body).toHaveProperty("error", "Not Found");
     expect(body).toHaveProperty("message", "No active round");
+  });
+
+  it("GET /games/rounds/history - returns paginated round history", async () => {
+    const response = await fetch(`${baseUrl}/games/rounds/history?page=2&limit=10`);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      items: [
+        {
+          roundId: "round-1",
+          status: "SETTLED",
+          crashMultiplierBps: 250,
+          serverSeedHash: "server-seed-hash",
+          clientSeed: "client-seed",
+          nonce: 1,
+          bettingStartedAt: "2026-01-01T00:00:00.000Z",
+          runningStartedAt: "2026-01-01T00:00:10.000Z",
+          crashedAt: "2026-01-01T00:00:20.000Z",
+          settledAt: "2026-01-01T00:00:30.000Z",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:30.000Z",
+        },
+      ],
+      pagination: {
+        page: 2,
+        limit: 10,
+        hasNextPage: false,
+      },
+    });
+    expect(getRoundsHistoryUseCase.calls[getRoundsHistoryUseCase.calls.length - 1]).toEqual({
+      page: 2,
+      limit: 10,
+    });
+  });
+
+  it("GET /games/bets/me - returns paginated player bet history", async () => {
+    const response = await fetch(`${baseUrl}/games/bets/me?playerId=player-1&page=1&limit=5`);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      items: [
+        {
+          betId: "bet-1",
+          playerId: "player-1",
+          roundId: "round-1",
+          amountCents: "250",
+          status: "CASHED_OUT",
+          cashoutMultiplierBps: 150,
+          payoutCents: "375",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:15.000Z",
+        },
+      ],
+      pagination: {
+        page: 1,
+        limit: 5,
+        hasNextPage: false,
+      },
+    });
+    expect(getMyBetsHistoryUseCase.calls[getMyBetsHistoryUseCase.calls.length - 1]).toEqual({
+      playerId: "player-1",
+      page: 1,
+      limit: 5,
+    });
+  });
+
+  it("GET /games/bets/me - rejects missing playerId until auth is implemented", async () => {
+    const response = await fetch(`${baseUrl}/games/bets/me?page=1&limit=5`);
+
+    expect(response.status).toBe(400);
   });
 
   it("POST /games/rounds - creates a betting round", async () => {

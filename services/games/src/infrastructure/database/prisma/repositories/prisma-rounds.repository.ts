@@ -1,5 +1,8 @@
 import { Injectable } from "@nestjs/common";
-import { RoundsRepository } from "@/application/repositories/rounds.repository";
+import {
+  type ListRoundsHistoryInput,
+  RoundsRepository,
+} from "@/application/repositories/rounds.repository";
 import { Round } from "@/domain/entities/round.entity";
 import { RoundPrismaMapper } from "../mappers/round-prisma.mapper";
 import { PrismaService } from "../prisma.service";
@@ -45,5 +48,20 @@ export class PrismaRoundsRepository extends RoundsRepository {
     if (!round) return null;
 
     return RoundPrismaMapper.toDomain(round);
+  }
+
+  async findHistory(input: ListRoundsHistoryInput): Promise<Round[]> {
+    const rounds = await this.prisma.round.findMany({
+      where: {
+        status: {
+          in: ["CRASHED", "SETTLED"],
+        },
+      },
+      orderBy: { crashedAt: "desc" },
+      take: input.limit,
+      skip: input.offset,
+    });
+
+    return rounds.map(RoundPrismaMapper.toDomain);
   }
 }
