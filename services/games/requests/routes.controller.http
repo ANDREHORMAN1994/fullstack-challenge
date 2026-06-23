@@ -43,5 +43,5 @@ POST http://localhost:4001/games/rounds/current/crash
 ### SETTLE CURRENT ROUND - MARK REMAINING PLACED BETS AS LOST
 POST http://localhost:4001/games/rounds/current/settle
 
-### GET CURRENT ROUND - EXPECT 404 AFTER SETTLEMENT REMOVES ACTIVE ROUND
+### GET CURRENT ROUND - CHECK 404 OR NEXT BETTING ROUND AFTER SETTLEMENT
 GET http://localhost:4001/games/rounds/current

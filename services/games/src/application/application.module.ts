@@ -8,6 +8,7 @@ import { CashoutBetUseCase } from "./use-cases/cashout-bet.use-case";
 import { StartCurrentRoundUseCase } from "./use-cases/start-current-round.use-case";
 import { CrashCurrentRoundUseCase } from "./use-cases/crash-current-round.use-case";
 import { SettleCurrentRoundUseCase } from "./use-cases/settle-current-round.use-case";
+import { AutomaticRoundEngineService } from "./services/automatic-round-engine.service";
 
 @Module({
   imports: [MessagingModule, DatabaseModule],
@@ -19,6 +20,7 @@ import { SettleCurrentRoundUseCase } from "./use-cases/settle-current-round.use-
     StartCurrentRoundUseCase,
     CrashCurrentRoundUseCase,
     SettleCurrentRoundUseCase,
+    AutomaticRoundEngineService,
   ],
   exports: [
     PlaceBetUseCase,
@@ -28,6 +30,7 @@ import { SettleCurrentRoundUseCase } from "./use-cases/settle-current-round.use-
     StartCurrentRoundUseCase,
     CrashCurrentRoundUseCase,
     SettleCurrentRoundUseCase,
+    AutomaticRoundEngineService,
   ],
 })
 export class ApplicationModule {}

@@ -3,6 +3,7 @@ import { WalletClient } from "../clients/wallet.client";
 import { BetsRepository } from "../repositories/bet.repository";
 import { RoundsRepository } from "../repositories/rounds.repository";
 import { Round } from "@/domain/entities/round.entity";
+import { calculateCurrentMultiplierBps } from "@/domain/services/multiplier-calculator";
 
 export type CashoutBetInput = {
   playerId: string;
@@ -85,8 +86,7 @@ export class CashoutBetUseCase {
       throw new Error("Running round is missing running start timestamp");
     }
 
-    const elapsedMs = Math.max(0, now.getTime() - runningStartedAt.getTime());
-    const multiplierBps = 100 + Math.floor(elapsedMs / 100);
+    const multiplierBps = calculateCurrentMultiplierBps(runningStartedAt, now);
 
     if (multiplierBps >= round.crashMultiplierBps) {
       throw new Error("Round has already reached the crash multiplier");

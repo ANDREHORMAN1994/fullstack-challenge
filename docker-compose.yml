@@ -101,6 +101,13 @@ services:
       - "4001:4001"
     env_file:
       - ./services/games/.env
+    environment:
+      GAMES_ENGINE_ENABLED: "true"
+      GAMES_ENGINE_TICK_INTERVAL_MS: "500"
+      GAMES_BETTING_WINDOW_MS: "10000"
+      GAMES_SETTLEMENT_DELAY_MS: "2000"
+      GAMES_MIN_CRASH_MULTIPLIER_BPS: "120"
+      GAMES_MAX_CRASH_MULTIPLIER_BPS: "1000"
     depends_on:
       postgres:
         condition: service_healthy
