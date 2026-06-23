@@ -14,7 +14,10 @@
     "wallets:test:unit": "cd services/wallets && bun test tests/unit",
     "wallets:test:integration": "cd services/wallets && DATABASE_URL=postgresql://admin:admin@localhost:5432/wallets bun test tests/integration",
     "wallets:test:e2e": "cd services/wallets && DATABASE_URL=postgresql://admin:admin@localhost:5432/wallets bun test tests/e2e",
-    "wallets:test:all": "bun run wallets:typecheck && bun run wallets:test:unit && bun run wallets:test:integration && bun run wallets:test:e2e"
+    "wallets:test:all": "bun run wallets:typecheck && bun run wallets:test:unit && bun run wallets:test:integration && bun run wallets:test:e2e",
+    "frontend:dev": "cd frontend && bun run dev",
+    "frontend:typecheck": "cd frontend && bun run typecheck",
+    "frontend:build": "cd frontend && bun run build"
   },
   "devDependencies": {
     "bun-types": "latest"
