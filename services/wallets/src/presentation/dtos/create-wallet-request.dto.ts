@@ -1,10 +1,6 @@
-import { IsNotEmpty, IsOptional, IsString, Length } from "class-validator";
+import { IsOptional, IsString, Length } from "class-validator";
 
 export class CreateWalletRequestDto {
-  @IsString()
-  @IsNotEmpty()
-  playerId!: string;
-
   @IsOptional()
   @IsString()
   @Length(3, 3)

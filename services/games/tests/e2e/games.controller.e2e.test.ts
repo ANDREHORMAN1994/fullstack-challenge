@@ -324,6 +324,8 @@ describe("GamesController E2E", () => {
   let getMyBetsHistoryUseCase: FakeGetMyBetsHistoryUseCase;
 
   beforeAll(async () => {
+    process.env.AUTH_DISABLED_FOR_TESTS = "true";
+    process.env.AUTH_TEST_PLAYER_ID = "player-1";
     app = await NestFactory.create(TestAppModule, { logger: false });
 
     app.useGlobalPipes(
@@ -357,6 +359,8 @@ describe("GamesController E2E", () => {
 
   afterAll(async () => {
     await app.close();
+    delete process.env.AUTH_DISABLED_FOR_TESTS;
+    delete process.env.AUTH_TEST_PLAYER_ID;
   });
 
   it("GET /health - check service is on", async () => {
@@ -428,7 +432,7 @@ describe("GamesController E2E", () => {
   });
 
   it("GET /games/bets/me - returns paginated player bet history", async () => {
-    const response = await fetch(`${baseUrl}/games/bets/me?playerId=player-1&page=1&limit=5`);
+    const response = await fetch(`${baseUrl}/games/bets/me?page=1&limit=5`);
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
@@ -456,12 +460,6 @@ describe("GamesController E2E", () => {
       page: 1,
       limit: 5,
     });
-  });
-
-  it("GET /games/bets/me - rejects missing playerId until auth is implemented", async () => {
-    const response = await fetch(`${baseUrl}/games/bets/me?page=1&limit=5`);
-
-    expect(response.status).toBe(400);
   });
 
   it("POST /games/rounds - creates a betting round", async () => {
@@ -680,7 +678,6 @@ describe("GamesController E2E", () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        playerId: "player-1",
         betId: "bet-1",
         amountCents: "250",
       }),
@@ -710,7 +707,6 @@ describe("GamesController E2E", () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        playerId: "player-1",
         roundId: "round-1",
         betId: "bet-1",
         amountCents: "0",
@@ -738,7 +734,6 @@ describe("GamesController E2E", () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        playerId: "player-1",
         betId: "bet-1",
         amountCents: "999999",
       }),
@@ -764,7 +759,6 @@ describe("GamesController E2E", () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        playerId: "player-1",
         betId: "bet-1",
         amountCents: "250",
       }),
@@ -787,9 +781,7 @@ describe("GamesController E2E", () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        playerId: "player-1",
-      }),
+      body: JSON.stringify({}),
     });
 
     expect(response.status).toBe(201);
@@ -816,7 +808,6 @@ describe("GamesController E2E", () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        playerId: "",
         cashoutMultiplierBps: 120,
       }),
     });
@@ -827,7 +818,6 @@ describe("GamesController E2E", () => {
 
     expect(body).toHaveProperty("statusCode", 400);
     expect(body).toHaveProperty("error", "Bad Request");
-    expect(body.message).toContain("playerId should not be empty");
     expect(body.message).toContain("property cashoutMultiplierBps should not exist");
   });
 
@@ -839,9 +829,7 @@ describe("GamesController E2E", () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        playerId: "player-1",
-      }),
+      body: JSON.stringify({}),
     });
 
     cashoutBetUseCase.errorMessage = undefined;
@@ -863,9 +851,7 @@ describe("GamesController E2E", () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        playerId: "player-1",
-      }),
+      body: JSON.stringify({}),
     });
 
     cashoutBetUseCase.errorMessage = undefined;

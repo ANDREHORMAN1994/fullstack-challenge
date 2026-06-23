@@ -11,6 +11,8 @@ describe("WalletsController E2E", () => {
   let prisma: PrismaService;
 
   beforeAll(async () => {
+    process.env.AUTH_DISABLED_FOR_TESTS = "true";
+    process.env.AUTH_TEST_PLAYER_ID = "player-1";
     app = await NestFactory.create(AppModule, { logger: false });
     prisma = app.get(PrismaService);
 
@@ -40,6 +42,8 @@ describe("WalletsController E2E", () => {
 
   afterAll(async () => {
     await app.close();
+    delete process.env.AUTH_DISABLED_FOR_TESTS;
+    delete process.env.AUTH_TEST_PLAYER_ID;
   });
 
   it("GET /health - check services on", async () => {
@@ -61,7 +65,6 @@ describe("WalletsController E2E", () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        playerId: "player-1",
         currency: "BRL",
       }),
     });
@@ -78,19 +81,18 @@ describe("WalletsController E2E", () => {
     expect(body).toHaveProperty("updatedAt");
   });
 
-  it("POST /wallets - finds a wallet by playerId", async () => {
+  it("GET /wallets/me - finds the authenticated player wallet", async () => {
     await fetch(`${baseUrl}/wallets`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        playerId: "player-1",
         currency: "BRL",
       }),
     });
 
-    const response = await fetch(`${baseUrl}/wallets/player-1`);
+    const response = await fetch(`${baseUrl}/wallets/me`);
 
     expect(response.status).toBe(200);
 
@@ -106,7 +108,6 @@ describe("WalletsController E2E", () => {
 
   it("POST /wallets - returns conflict when creating a wallet for an existing player", async () => {
     const payload = {
-      playerId: "player-1",
       currency: "BRL",
     };
 
@@ -166,8 +167,6 @@ describe("WalletsController E2E", () => {
     expect(body).toHaveProperty("statusCode", 400);
     expect(body).toHaveProperty("error", "Bad Request");
     expect(body.message).toContain("property unexpected should not exist");
-    expect(body.message).toContain("playerId should not be empty");
-    expect(body.message).toContain("playerId must be a string");
   });
 
   it("POST /wallets/debit-bet - make two calls with the same operationId and debit only once", async () => {

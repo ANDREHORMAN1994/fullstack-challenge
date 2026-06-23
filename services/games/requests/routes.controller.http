@@ -1,3 +1,5 @@
+@accessToken = paste-keycloak-access-token-here
+
 ### HEALTH CHECK - VERIFY THE GAME SERVICE IS RUNNING
 GET http://localhost:4001/health
 
@@ -18,9 +20,9 @@ GET http://localhost:4001/games/rounds/history?page=1&limit=20
 ### PLACE BET - BET INTO THE CURRENT BETTING ROUND
 POST http://localhost:4001/games/bet
 Content-Type: application/json
+Authorization: Bearer {{accessToken}}
 
 {
-  "playerId": "player-rmq-1",
   "betId": "bet-rmq-1",
   "amountCents": "250"
 }
@@ -34,13 +36,13 @@ GET http://localhost:4001/games/rounds/current
 ### CASHOUT BET - CASH OUT THE PLAYER BET DURING THE RUNNING PHASE
 POST http://localhost:4001/games/bet/cashout
 Content-Type: application/json
+Authorization: Bearer {{accessToken}}
 
-{
-  "playerId": "player-rmq-1"
-}
+{}
 
-### GET MY BETS HISTORY - TEMPORARY PLAYER ID UNTIL JWT AUTH BLOCK
-GET http://localhost:4001/games/bets/me?playerId=player-rmq-1&page=1&limit=20
+### GET MY BETS HISTORY - USES PLAYER ID FROM JWT
+GET http://localhost:4001/games/bets/me?page=1&limit=20
+Authorization: Bearer {{accessToken}}
 
 ### CRASH CURRENT ROUND - STOP THE MULTIPLIER AT THE CRASH POINT
 POST http://localhost:4001/games/rounds/current/crash

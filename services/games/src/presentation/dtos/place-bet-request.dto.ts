@@ -3,10 +3,6 @@ import { IsNotEmpty, IsString, Matches } from "class-validator";
 export class PlaceBetRequestDto {
   @IsString()
   @IsNotEmpty()
-  playerId!: string;
-
-  @IsString()
-  @IsNotEmpty()
   betId!: string;
 
   @IsString()

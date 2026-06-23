@@ -1,17 +1,20 @@
+@accessToken = paste-keycloak-access-token-here
+
 ### HEALTH CHECK - VERIFY THE WALLET SERVICE IS RUNNING
 GET http://localhost:4002/health
 
 ### CREATE WALLET - OPEN A WALLET FOR THE TEST PLAYER
 POST http://localhost:4002/wallets
 Content-Type: application/json
+Authorization: Bearer {{accessToken}}
 
 {
-  "playerId": "player-rmq-1",
   "currency": "BRL"
 }
 
-### GET WALLET - CHECK INITIAL BALANCE AND WALLET DATA
-GET http://localhost:4002/wallets/player-rmq-1
+### GET MY WALLET - CHECK INITIAL BALANCE AND WALLET DATA
+GET http://localhost:4002/wallets/me
+Authorization: Bearer {{accessToken}}
 
 ### DEBIT BET - SIMULATE GAME SERVICE DEBITING A PLACED BET
 POST http://localhost:4002/wallets/debit-bet

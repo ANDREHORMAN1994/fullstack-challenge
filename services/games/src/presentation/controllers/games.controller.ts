@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   UnprocessableEntityException,
+  UseGuards,
 } from "@nestjs/common";
 import { HealthCheckResponseDto } from "../dtos/health-check-response.dto";
 import { PlaceBetRequestDto } from "../dtos/place-bet-request.dto";
@@ -32,6 +33,11 @@ import { PaginationQueryDto } from "../dtos/pagination-query.dto";
 import { RoundsHistoryResponseDto } from "../dtos/rounds-history-response.dto";
 import { MyBetsHistoryQueryDto } from "../dtos/my-bets-history-query.dto";
 import { MyBetsHistoryResponseDto } from "../dtos/my-bets-history-response.dto";
+import {
+  AuthenticatedPlayer,
+  type AuthenticatedPlayer as AuthenticatedPlayerPayload,
+} from "../auth/authenticated-player.decorator";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 @Controller()
 export class GamesController {
@@ -77,11 +83,13 @@ export class GamesController {
   }
 
   @Get("games/bets/me")
+  @UseGuards(JwtAuthGuard)
   async getMyBetsHistory(
     @Query() query: MyBetsHistoryQueryDto,
+    @AuthenticatedPlayer() player: AuthenticatedPlayerPayload,
   ): Promise<MyBetsHistoryResponseDto> {
     const history = await this.getMyBetsHistoryUseCase.execute({
-      playerId: query.playerId,
+      playerId: player.playerId,
       page: query.page,
       limit: query.limit,
     });
@@ -188,12 +196,16 @@ export class GamesController {
   }
 
   @Post("games/bet")
-  async placeBet(@Body() body: PlaceBetRequestDto) {
+  @UseGuards(JwtAuthGuard)
+  async placeBet(
+    @Body() body: PlaceBetRequestDto,
+    @AuthenticatedPlayer() player: AuthenticatedPlayerPayload,
+  ) {
     try {
       const response = await this.placeBetUseCase.execute({
         betId: body.betId,
         amountCents: body.amountCents,
-        playerId: body.playerId,
+        playerId: player.playerId,
       });
       return new PlaceBetResponseDto(response);
     } catch (error) {
@@ -217,10 +229,14 @@ export class GamesController {
   }
 
   @Post("games/bet/cashout")
-  async cashoutBet(@Body() body: CashoutBetRequestDto) {
+  @UseGuards(JwtAuthGuard)
+  async cashoutBet(
+    @Body() _body: CashoutBetRequestDto,
+    @AuthenticatedPlayer() player: AuthenticatedPlayerPayload,
+  ) {
     try {
       const response = await this.cashoutBetUseCase.execute({
-        playerId: body.playerId,
+        playerId: player.playerId,
       });
 
       return new CashoutBetResponseDto(response);
