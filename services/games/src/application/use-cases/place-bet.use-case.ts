@@ -3,6 +3,10 @@ import { WalletClient } from "../clients/wallet.client";
 import { Bet } from "@/domain/entities/bet.entity";
 import { BetsRepository } from "../repositories/bet.repository";
 import { RoundsRepository } from "../repositories/rounds.repository";
+import {
+  GameEventsPublisher,
+  NOOP_GAME_EVENTS_PUBLISHER,
+} from "../events/game-events.publisher";
 
 export type PlaceBetInput = {
   playerId: string;
@@ -26,6 +30,7 @@ export class PlaceBetUseCase {
     private walletClient: WalletClient,
     private betsRepository: BetsRepository,
     private roundsRepository: RoundsRepository,
+    private readonly gameEventsPublisher: GameEventsPublisher = NOOP_GAME_EVENTS_PUBLISHER,
   ) {}
 
   async execute(input: PlaceBetInput): Promise<PlaceBetOutput> {
@@ -70,9 +75,8 @@ export class PlaceBetUseCase {
     }
 
     const savedBet = await this.betsRepository.create(bet);
-
-    return {
-      accepted: true,
+    const output = {
+      accepted: true as const,
       betId: savedBet.id,
       playerId: savedBet.playerId,
       roundId: savedBet.roundId,
@@ -80,5 +84,17 @@ export class PlaceBetUseCase {
       walletTransactionId: response.transaction.id,
       walletBalanceAfterCents: response.transaction.balanceAfterCents,
     };
+
+    this.gameEventsPublisher.publish({
+      name: "bet.placed",
+      payload: {
+        betId: output.betId,
+        playerId: output.playerId,
+        roundId: output.roundId,
+        amountCents: output.amountCents,
+      },
+    });
+
+    return output;
   }
 }

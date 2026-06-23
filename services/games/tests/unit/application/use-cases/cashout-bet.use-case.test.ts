@@ -4,6 +4,7 @@ import { Bet } from "@/domain/entities/bet.entity";
 import { Round, type RoundProps } from "@/domain/entities/round.entity";
 import {
   FakeBetRepository,
+  FakeGameEventsPublisher,
   FakeRoundsRepository,
   FakeWalletClient,
 } from "../../utils/wallet-client-fake";
@@ -67,7 +68,8 @@ const makeCashoutBetUseCase = (
   walletClient = new FakeWalletClient(successfulDebitResponse, successfulCreditResponse),
   betsRepository = new FakeBetRepository(),
   roundsRepository = new FakeRoundsRepository(makeRunningRound()),
-) => new CashoutBetUseCase(walletClient, betsRepository, roundsRepository);
+  gameEventsPublisher = new FakeGameEventsPublisher(),
+) => new CashoutBetUseCase(walletClient, betsRepository, roundsRepository, gameEventsPublisher);
 
 describe("CashoutBetUseCase", () => {
   it("credits the wallet using a deterministic operationId and server-calculated payout", async () => {
@@ -135,6 +137,36 @@ describe("CashoutBetUseCase", () => {
     expect(savedBet?.getStatus()).toBe("CASHED_OUT");
     expect(savedBet?.getCashoutMultiplierBps()).toBe(120);
     expect(savedBet?.getPayoutCents()).toBe(300n);
+  });
+
+  it("publishes a bet cashed out event when the bet is stored", async () => {
+    const gameEventsPublisher = new FakeGameEventsPublisher();
+    const betsRepository = new FakeBetRepository();
+    await betsRepository.create(makePlacedBet());
+    const cashoutBetUseCase = makeCashoutBetUseCase(
+      new FakeWalletClient(successfulDebitResponse, successfulCreditResponse),
+      betsRepository,
+      new FakeRoundsRepository(makeRunningRound()),
+      gameEventsPublisher,
+    );
+
+    await cashoutBetUseCase.execute(
+      { playerId: "player-1" },
+      new Date("2026-01-01T00:00:02.000Z"),
+    );
+
+    expect(gameEventsPublisher.events).toEqual([
+      {
+        name: "bet.cashed_out",
+        payload: {
+          betId: "bet-1",
+          playerId: "player-1",
+          roundId: "round-1",
+          cashoutMultiplierBps: 120,
+          payoutCents: "300",
+        },
+      },
+    ]);
   });
 
   it("rejects when there is no active round before crediting the wallet", async () => {

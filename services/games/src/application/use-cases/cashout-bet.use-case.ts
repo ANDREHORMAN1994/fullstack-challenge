@@ -4,6 +4,10 @@ import { BetsRepository } from "../repositories/bet.repository";
 import { RoundsRepository } from "../repositories/rounds.repository";
 import { Round } from "@/domain/entities/round.entity";
 import { calculateCurrentMultiplierBps } from "@/domain/services/multiplier-calculator";
+import {
+  GameEventsPublisher,
+  NOOP_GAME_EVENTS_PUBLISHER,
+} from "../events/game-events.publisher";
 
 export type CashoutBetInput = {
   playerId: string;
@@ -27,6 +31,7 @@ export class CashoutBetUseCase {
     private walletClient: WalletClient,
     private betsRepository: BetsRepository,
     private roundsRepository: RoundsRepository,
+    private readonly gameEventsPublisher: GameEventsPublisher = NOOP_GAME_EVENTS_PUBLISHER,
   ) {}
 
   async execute(input: CashoutBetInput, now = new Date()): Promise<CashoutBetOutput> {
@@ -65,9 +70,8 @@ export class CashoutBetUseCase {
     }
 
     const savedBet = await this.betsRepository.create(bet);
-
-    return {
-      cashedOut: true,
+    const output = {
+      cashedOut: true as const,
       betId: savedBet.id,
       playerId: savedBet.playerId,
       roundId: savedBet.roundId,
@@ -77,6 +81,19 @@ export class CashoutBetUseCase {
       walletTransactionId: response.transaction.id,
       walletBalanceAfterCents: response.transaction.balanceAfterCents,
     };
+
+    this.gameEventsPublisher.publish({
+      name: "bet.cashed_out",
+      payload: {
+        betId: output.betId,
+        playerId: output.playerId,
+        roundId: output.roundId,
+        cashoutMultiplierBps: output.cashoutMultiplierBps,
+        payoutCents: output.payoutCents,
+      },
+    });
+
+    return output;
   }
 
   private calculateCurrentMultiplierBps(round: Round, now: Date): number {

@@ -1,6 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { Round } from "@/domain/entities/round.entity";
 import { RoundsRepository } from "../repositories/rounds.repository";
+import {
+  GameEventsPublisher,
+  NOOP_GAME_EVENTS_PUBLISHER,
+} from "../events/game-events.publisher";
 
 export type CreateRoundInput = {
   roundId: string;
@@ -21,7 +25,10 @@ export type RoundOutput = {
 
 @Injectable()
 export class CreateRoundUseCase {
-  constructor(private readonly roundsRepository: RoundsRepository) {}
+  constructor(
+    private readonly roundsRepository: RoundsRepository,
+    private readonly gameEventsPublisher: GameEventsPublisher = NOOP_GAME_EVENTS_PUBLISHER,
+  ) {}
 
   async execute(input: CreateRoundInput): Promise<RoundOutput> {
     const currentRound = await this.roundsRepository.findCurrent();
@@ -40,8 +47,19 @@ export class CreateRoundUseCase {
     });
 
     const savedRound = await this.roundsRepository.save(round);
+    const output = toRoundOutput(savedRound);
 
-    return toRoundOutput(savedRound);
+    this.gameEventsPublisher.publish({
+      name: "round.created",
+      payload: {
+        roundId: output.roundId,
+        status: output.status,
+        crashMultiplierBps: output.crashMultiplierBps,
+        bettingStartedAt: output.bettingStartedAt,
+      },
+    });
+
+    return output;
   }
 }
 

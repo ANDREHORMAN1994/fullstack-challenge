@@ -5,6 +5,10 @@ import { StartCurrentRoundUseCase } from "../use-cases/start-current-round.use-c
 import { CrashCurrentRoundUseCase } from "../use-cases/crash-current-round.use-case";
 import { SettleCurrentRoundUseCase } from "../use-cases/settle-current-round.use-case";
 import { calculateCurrentMultiplierBps } from "@/domain/services/multiplier-calculator";
+import {
+  GameEventsPublisher,
+  NOOP_GAME_EVENTS_PUBLISHER,
+} from "../events/game-events.publisher";
 
 export type AutomaticRoundEngineConfig = {
   enabled: boolean;
@@ -37,6 +41,7 @@ export class AutomaticRoundEngineService implements OnModuleInit, OnModuleDestro
     private readonly startCurrentRoundUseCase: StartCurrentRoundUseCase,
     private readonly crashCurrentRoundUseCase: CrashCurrentRoundUseCase,
     private readonly settleCurrentRoundUseCase: SettleCurrentRoundUseCase,
+    private readonly gameEventsPublisher: GameEventsPublisher = NOOP_GAME_EVENTS_PUBLISHER,
   ) {
     this.config = getAutomaticRoundEngineConfig();
   }
@@ -104,6 +109,14 @@ export class AutomaticRoundEngineService implements OnModuleInit, OnModuleDestro
       }
 
       const multiplierBps = calculateCurrentMultiplierBps(runningStartedAt, now);
+
+      this.gameEventsPublisher.publish({
+        name: "round.multiplier",
+        payload: {
+          roundId: currentRound.id,
+          multiplierBps,
+        },
+      });
 
       if (multiplierBps >= currentRound.crashMultiplierBps) {
         await this.crashCurrentRoundUseCase.execute(now);

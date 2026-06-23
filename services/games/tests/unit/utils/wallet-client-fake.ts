@@ -1,4 +1,5 @@
 import { WalletClient } from "@/application/clients/wallet.client";
+import { GameEvent, GameEventsPublisher } from "@/application/events/game-events.publisher";
 import { BetsRepository } from "@/application/repositories/bet.repository";
 import { RoundsRepository } from "@/application/repositories/rounds.repository";
 import { Bet } from "@/domain/entities/bet.entity";
@@ -98,5 +99,13 @@ export class FakeRoundsRepository extends RoundsRepository {
         .sort((left, right) => right.getCreatedAt().getTime() - left.getCreatedAt().getTime())[0] ??
       null
     );
+  }
+}
+
+export class FakeGameEventsPublisher extends GameEventsPublisher {
+  readonly events: GameEvent[] = [];
+
+  publish(event: GameEvent): void {
+    this.events.push(event);
   }
 }

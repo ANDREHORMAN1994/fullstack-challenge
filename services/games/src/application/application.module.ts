@@ -9,6 +9,8 @@ import { StartCurrentRoundUseCase } from "./use-cases/start-current-round.use-ca
 import { CrashCurrentRoundUseCase } from "./use-cases/crash-current-round.use-case";
 import { SettleCurrentRoundUseCase } from "./use-cases/settle-current-round.use-case";
 import { AutomaticRoundEngineService } from "./services/automatic-round-engine.service";
+import { GameEventsPublisher } from "./events/game-events.publisher";
+import { SocketioGameEventsPublisher } from "@/infrastructure/realtime/socketio-game-events.publisher";
 
 @Module({
   imports: [MessagingModule, DatabaseModule],
@@ -21,6 +23,11 @@ import { AutomaticRoundEngineService } from "./services/automatic-round-engine.s
     CrashCurrentRoundUseCase,
     SettleCurrentRoundUseCase,
     AutomaticRoundEngineService,
+    SocketioGameEventsPublisher,
+    {
+      provide: GameEventsPublisher,
+      useExisting: SocketioGameEventsPublisher,
+    },
   ],
   exports: [
     PlaceBetUseCase,
@@ -31,6 +38,8 @@ import { AutomaticRoundEngineService } from "./services/automatic-round-engine.s
     CrashCurrentRoundUseCase,
     SettleCurrentRoundUseCase,
     AutomaticRoundEngineService,
+    SocketioGameEventsPublisher,
+    GameEventsPublisher,
   ],
 })
 export class ApplicationModule {}

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { PlaceBetUseCase } from "@/application/use-cases/place-bet.use-case";
 import {
+  FakeGameEventsPublisher,
   FakeBetRepository,
   FakeRoundsRepository,
   FakeWalletClient,
@@ -39,7 +40,8 @@ const makePlaceBetUseCase = (
   walletClient = new FakeWalletClient(successfulDebitResponse),
   betsRepository = new FakeBetRepository(),
   roundsRepository = new FakeRoundsRepository(makeRound()),
-) => new PlaceBetUseCase(walletClient, betsRepository, roundsRepository);
+  gameEventsPublisher = new FakeGameEventsPublisher(),
+) => new PlaceBetUseCase(walletClient, betsRepository, roundsRepository, gameEventsPublisher);
 
 describe("PlaceBetUseCase", () => {
   it("debits the wallet using a deterministic operationId", async () => {
@@ -81,6 +83,34 @@ describe("PlaceBetUseCase", () => {
       walletTransactionId: "transaction-1",
       walletBalanceAfterCents: "750",
     });
+  });
+
+  it("publishes a bet placed event when the bet is stored", async () => {
+    const gameEventsPublisher = new FakeGameEventsPublisher();
+    const placeBetUseCase = makePlaceBetUseCase(
+      new FakeWalletClient(successfulDebitResponse),
+      new FakeBetRepository(),
+      new FakeRoundsRepository(makeRound()),
+      gameEventsPublisher,
+    );
+
+    await placeBetUseCase.execute({
+      playerId: "player-1",
+      betId: "bet-1",
+      amountCents: "250",
+    });
+
+    expect(gameEventsPublisher.events).toEqual([
+      {
+        name: "bet.placed",
+        payload: {
+          betId: "bet-1",
+          playerId: "player-1",
+          roundId: "round-1",
+          amountCents: "250",
+        },
+      },
+    ]);
   });
 
   it("throws a game application error when wallet debit fails", async () => {

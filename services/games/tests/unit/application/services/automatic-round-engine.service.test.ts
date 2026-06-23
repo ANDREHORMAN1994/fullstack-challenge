@@ -4,7 +4,11 @@ import { CreateRoundUseCase } from "@/application/use-cases/create-round.use-cas
 import { StartCurrentRoundUseCase } from "@/application/use-cases/start-current-round.use-case";
 import { CrashCurrentRoundUseCase } from "@/application/use-cases/crash-current-round.use-case";
 import { SettleCurrentRoundUseCase } from "@/application/use-cases/settle-current-round.use-case";
-import { FakeBetRepository, FakeRoundsRepository } from "../../utils/wallet-client-fake";
+import {
+  FakeBetRepository,
+  FakeGameEventsPublisher,
+  FakeRoundsRepository,
+} from "../../utils/wallet-client-fake";
 import { Round, type RoundProps } from "@/domain/entities/round.entity";
 import { Bet } from "@/domain/entities/bet.entity";
 
@@ -33,6 +37,7 @@ const makePlacedBet = (): Bet =>
 const makeEngine = (
   roundsRepository = new FakeRoundsRepository(null),
   betsRepository = new FakeBetRepository(),
+  gameEventsPublisher = new FakeGameEventsPublisher(),
 ) =>
   new AutomaticRoundEngineService(
     roundsRepository,
@@ -40,6 +45,7 @@ const makeEngine = (
     new StartCurrentRoundUseCase(roundsRepository),
     new CrashCurrentRoundUseCase(roundsRepository),
     new SettleCurrentRoundUseCase(roundsRepository, betsRepository),
+    gameEventsPublisher,
   );
 
 describe("AutomaticRoundEngineService", () => {
@@ -108,6 +114,28 @@ describe("AutomaticRoundEngineService", () => {
 
     expect(currentRound?.getStatus()).toBe("CRASHED");
     expect(currentRound?.getCrashedAt()?.toISOString()).toBe("2026-01-01T00:00:25.000Z");
+  });
+
+  it("publishes multiplier updates while a round is running", async () => {
+    const runningRound = makeRound({
+      status: "RUNNING",
+      runningStartedAt: new Date("2026-01-01T00:00:10.000Z"),
+    });
+    const roundsRepository = new FakeRoundsRepository(runningRound);
+    const gameEventsPublisher = new FakeGameEventsPublisher();
+    const engine = makeEngine(roundsRepository, new FakeBetRepository(), gameEventsPublisher);
+
+    await engine.tick(new Date("2026-01-01T00:00:12.000Z"));
+
+    expect(gameEventsPublisher.events).toEqual([
+      {
+        name: "round.multiplier",
+        payload: {
+          roundId: "round-1",
+          multiplierBps: 120,
+        },
+      },
+    ]);
   });
 
   it("keeps a crashed round visible until the settlement delay expires", async () => {
