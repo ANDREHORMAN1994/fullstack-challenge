@@ -13,7 +13,10 @@ export class FakeWalletClient extends WalletClient {
   debitBetCalls: WalletDebitBetRequest[] = [];
   creditCashoutCalls: WalletCreditCashoutRequest[] = [];
 
-  constructor(private debitBetResponse: WalletOperationResponse) {
+  constructor(
+    private debitBetResponse: WalletOperationResponse,
+    private creditCashoutResponse?: WalletOperationResponse,
+  ) {
     super();
   }
 
@@ -22,9 +25,14 @@ export class FakeWalletClient extends WalletClient {
     return this.debitBetResponse;
   }
 
-  creditCashout(input: WalletCreditCashoutRequest): Promise<WalletOperationResponse> {
+  async creditCashout(input: WalletCreditCashoutRequest): Promise<WalletOperationResponse> {
     this.creditCashoutCalls.push(input);
-    throw new Error("creditCashout should not be called");
+
+    if (!this.creditCashoutResponse) {
+      throw new Error("creditCashout should not be called");
+    }
+
+    return this.creditCashoutResponse;
   }
 }
 

@@ -10,3 +10,20 @@ Content-Type: application/json
   "betId": "bet-rmq-1",
   "amountCents": "250"
 }
+
+### start current round
+POST http://localhost:4001/games/rounds/current/start
+
+### cashout bet /games/bet/cashout
+POST http://localhost:4001/games/bet/cashout
+Content-Type: application/json
+
+{
+  "playerId": "player-rmq-1"
+}
+
+### crash current round
+POST http://localhost:4001/games/rounds/current/crash
+
+### settle current round
+POST http://localhost:4001/games/rounds/current/settle

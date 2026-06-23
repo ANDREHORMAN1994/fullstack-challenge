@@ -6,11 +6,21 @@ import { Module } from "@nestjs/common";
 import { GamesController } from "@/presentation/controllers/games.controller";
 import { PlaceBetUseCase, type PlaceBetInput } from "@/application/use-cases/place-bet.use-case";
 import {
+  CashoutBetUseCase,
+  type CashoutBetInput,
+} from "@/application/use-cases/cashout-bet.use-case";
+import {
   CreateRoundUseCase,
   type CreateRoundInput,
   type RoundOutput,
 } from "@/application/use-cases/create-round.use-case";
 import { GetCurrentRoundUseCase } from "@/application/use-cases/get-current-round.use-case";
+import { StartCurrentRoundUseCase } from "@/application/use-cases/start-current-round.use-case";
+import { CrashCurrentRoundUseCase } from "@/application/use-cases/crash-current-round.use-case";
+import {
+  SettleCurrentRoundUseCase,
+  type SettleCurrentRoundOutput,
+} from "@/application/use-cases/settle-current-round.use-case";
 
 class FakePlaceBetUseCase {
   calls: PlaceBetInput[] = [];
@@ -31,6 +41,31 @@ class FakePlaceBetUseCase {
       amountCents: input.amountCents,
       walletTransactionId: "transaction-1",
       walletBalanceAfterCents: "750",
+    };
+  }
+}
+
+class FakeCashoutBetUseCase {
+  calls: CashoutBetInput[] = [];
+  errorMessage?: string;
+
+  async execute(input: CashoutBetInput) {
+    this.calls.push(input);
+
+    if (this.errorMessage) {
+      throw new Error(this.errorMessage);
+    }
+
+    return {
+      cashedOut: true,
+      betId: "bet-1",
+      playerId: input.playerId,
+      roundId: "round-1",
+      amountCents: "250",
+      cashoutMultiplierBps: 120,
+      payoutCents: "300",
+      walletTransactionId: "transaction-1",
+      walletBalanceAfterCents: "1050",
     };
   }
 }
@@ -71,12 +106,73 @@ class FakeGetCurrentRoundUseCase {
   }
 }
 
+class FakeStartCurrentRoundUseCase {
+  errorMessage?: string;
+
+  async execute(): Promise<RoundOutput> {
+    if (this.errorMessage) {
+      throw new Error(this.errorMessage);
+    }
+
+    return {
+      ...roundResponse,
+      status: "RUNNING",
+      runningStartedAt: "2026-01-01T00:00:10.000Z",
+      updatedAt: "2026-01-01T00:00:10.000Z",
+    };
+  }
+}
+
+class FakeCrashCurrentRoundUseCase {
+  errorMessage?: string;
+
+  async execute(): Promise<RoundOutput> {
+    if (this.errorMessage) {
+      throw new Error(this.errorMessage);
+    }
+
+    return {
+      ...roundResponse,
+      status: "CRASHED",
+      runningStartedAt: "2026-01-01T00:00:10.000Z",
+      crashedAt: "2026-01-01T00:00:20.000Z",
+      updatedAt: "2026-01-01T00:00:20.000Z",
+    };
+  }
+}
+
+class FakeSettleCurrentRoundUseCase {
+  errorMessage?: string;
+
+  async execute(): Promise<SettleCurrentRoundOutput> {
+    if (this.errorMessage) {
+      throw new Error(this.errorMessage);
+    }
+
+    return {
+      round: {
+        ...roundResponse,
+        status: "SETTLED",
+        runningStartedAt: "2026-01-01T00:00:10.000Z",
+        crashedAt: "2026-01-01T00:00:20.000Z",
+        settledAt: "2026-01-01T00:00:30.000Z",
+        updatedAt: "2026-01-01T00:00:30.000Z",
+      },
+      lostBetsCount: 2,
+    };
+  }
+}
+
 @Module({
   controllers: [GamesController],
   providers: [
     {
       provide: PlaceBetUseCase,
       useClass: FakePlaceBetUseCase,
+    },
+    {
+      provide: CashoutBetUseCase,
+      useClass: FakeCashoutBetUseCase,
     },
     {
       provide: CreateRoundUseCase,
@@ -86,6 +182,18 @@ class FakeGetCurrentRoundUseCase {
       provide: GetCurrentRoundUseCase,
       useClass: FakeGetCurrentRoundUseCase,
     },
+    {
+      provide: StartCurrentRoundUseCase,
+      useClass: FakeStartCurrentRoundUseCase,
+    },
+    {
+      provide: CrashCurrentRoundUseCase,
+      useClass: FakeCrashCurrentRoundUseCase,
+    },
+    {
+      provide: SettleCurrentRoundUseCase,
+      useClass: FakeSettleCurrentRoundUseCase,
+    },
   ],
 })
 class TestAppModule {}
@@ -94,8 +202,12 @@ describe("GamesController E2E", () => {
   let app: INestApplication;
   let baseUrl: string;
   let placeBetUseCase: FakePlaceBetUseCase;
+  let cashoutBetUseCase: FakeCashoutBetUseCase;
   let createRoundUseCase: FakeCreateRoundUseCase;
   let getCurrentRoundUseCase: FakeGetCurrentRoundUseCase;
+  let startCurrentRoundUseCase: FakeStartCurrentRoundUseCase;
+  let crashCurrentRoundUseCase: FakeCrashCurrentRoundUseCase;
+  let settleCurrentRoundUseCase: FakeSettleCurrentRoundUseCase;
 
   beforeAll(async () => {
     app = await NestFactory.create(TestAppModule, { logger: false });
@@ -118,8 +230,12 @@ describe("GamesController E2E", () => {
 
     baseUrl = `http://localhost:${address.port}`;
     placeBetUseCase = app.get(PlaceBetUseCase);
+    cashoutBetUseCase = app.get(CashoutBetUseCase);
     createRoundUseCase = app.get(CreateRoundUseCase);
     getCurrentRoundUseCase = app.get(GetCurrentRoundUseCase);
+    startCurrentRoundUseCase = app.get(StartCurrentRoundUseCase);
+    crashCurrentRoundUseCase = app.get(CrashCurrentRoundUseCase);
+    settleCurrentRoundUseCase = app.get(SettleCurrentRoundUseCase);
   });
 
   afterAll(async () => {
@@ -234,6 +350,102 @@ describe("GamesController E2E", () => {
     expect(body).toHaveProperty("message", "There is already an active round");
   });
 
+  it("POST /games/rounds/current/start - starts the current round", async () => {
+    const response = await fetch(`${baseUrl}/games/rounds/current/start`, {
+      method: "POST",
+    });
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toMatchObject({
+      roundId: "round-1",
+      status: "RUNNING",
+      runningStartedAt: "2026-01-01T00:00:10.000Z",
+    });
+  });
+
+  it("POST /games/rounds/current/start - maps invalid state to 409", async () => {
+    startCurrentRoundUseCase.errorMessage = "Only betting rounds can start running";
+
+    const response = await fetch(`${baseUrl}/games/rounds/current/start`, {
+      method: "POST",
+    });
+
+    startCurrentRoundUseCase.errorMessage = undefined;
+
+    expect(response.status).toBe(409);
+
+    const body = await response.json();
+
+    expect(body).toHaveProperty("statusCode", 409);
+    expect(body).toHaveProperty("message", "Only betting rounds can start running");
+  });
+
+  it("POST /games/rounds/current/crash - crashes the current round", async () => {
+    const response = await fetch(`${baseUrl}/games/rounds/current/crash`, {
+      method: "POST",
+    });
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toMatchObject({
+      roundId: "round-1",
+      status: "CRASHED",
+      crashedAt: "2026-01-01T00:00:20.000Z",
+    });
+  });
+
+  it("POST /games/rounds/current/crash - maps invalid state to 409", async () => {
+    crashCurrentRoundUseCase.errorMessage = "Only running rounds can crash";
+
+    const response = await fetch(`${baseUrl}/games/rounds/current/crash`, {
+      method: "POST",
+    });
+
+    crashCurrentRoundUseCase.errorMessage = undefined;
+
+    expect(response.status).toBe(409);
+
+    const body = await response.json();
+
+    expect(body).toHaveProperty("statusCode", 409);
+    expect(body).toHaveProperty("message", "Only running rounds can crash");
+  });
+
+  it("POST /games/rounds/current/settle - settles the current round and returns lost bet count", async () => {
+    const response = await fetch(`${baseUrl}/games/rounds/current/settle`, {
+      method: "POST",
+    });
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toEqual({
+      round: {
+        ...roundResponse,
+        status: "SETTLED",
+        runningStartedAt: "2026-01-01T00:00:10.000Z",
+        crashedAt: "2026-01-01T00:00:20.000Z",
+        settledAt: "2026-01-01T00:00:30.000Z",
+        updatedAt: "2026-01-01T00:00:30.000Z",
+      },
+      lostBetsCount: 2,
+    });
+  });
+
+  it("POST /games/rounds/current/settle - maps invalid state to 409", async () => {
+    settleCurrentRoundUseCase.errorMessage = "Only crashed rounds can be settled";
+
+    const response = await fetch(`${baseUrl}/games/rounds/current/settle`, {
+      method: "POST",
+    });
+
+    settleCurrentRoundUseCase.errorMessage = undefined;
+
+    expect(response.status).toBe(409);
+
+    const body = await response.json();
+
+    expect(body).toHaveProperty("statusCode", 409);
+    expect(body).toHaveProperty("message", "Only crashed rounds can be settled");
+  });
+
   it("POST /games/bet - places a bet in the current round", async () => {
     const response = await fetch(`${baseUrl}/games/bet`, {
       method: "POST",
@@ -340,5 +552,103 @@ describe("GamesController E2E", () => {
     expect(body).toHaveProperty("statusCode", 409);
     expect(body).toHaveProperty("error", "Conflict");
     expect(body).toHaveProperty("message", "Round is not accepting bets");
+  });
+
+  it("POST /games/bet/cashout - cashes out the current round bet", async () => {
+    const response = await fetch(`${baseUrl}/games/bet/cashout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        playerId: "player-1",
+      }),
+    });
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toEqual({
+      cashedOut: true,
+      betId: "bet-1",
+      playerId: "player-1",
+      roundId: "round-1",
+      amountCents: "250",
+      cashoutMultiplierBps: 120,
+      payoutCents: "300",
+      walletTransactionId: "transaction-1",
+      walletBalanceAfterCents: "1050",
+    });
+    expect(cashoutBetUseCase.calls[cashoutBetUseCase.calls.length - 1]).toEqual({
+      playerId: "player-1",
+    });
+  });
+
+  it("POST /games/bet/cashout - rejects invalid payloads", async () => {
+    const response = await fetch(`${baseUrl}/games/bet/cashout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        playerId: "",
+        cashoutMultiplierBps: 120,
+      }),
+    });
+
+    expect(response.status).toBe(400);
+
+    const body = await response.json();
+
+    expect(body).toHaveProperty("statusCode", 400);
+    expect(body).toHaveProperty("error", "Bad Request");
+    expect(body.message).toContain("playerId should not be empty");
+    expect(body.message).toContain("property cashoutMultiplierBps should not exist");
+  });
+
+  it("POST /games/bet/cashout - maps wallet credit failures to 422", async () => {
+    cashoutBetUseCase.errorMessage = "Wallet cashout credit failed: WALLET_NOT_FOUND";
+
+    const response = await fetch(`${baseUrl}/games/bet/cashout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        playerId: "player-1",
+      }),
+    });
+
+    cashoutBetUseCase.errorMessage = undefined;
+
+    expect(response.status).toBe(422);
+
+    const body = await response.json();
+
+    expect(body).toHaveProperty("statusCode", 422);
+    expect(body).toHaveProperty("error", "Unprocessable Entity");
+    expect(body).toHaveProperty("message", "Wallet cashout credit failed: WALLET_NOT_FOUND");
+  });
+
+  it("POST /games/bet/cashout - maps game rule failures to 409", async () => {
+    cashoutBetUseCase.errorMessage = "Player has no bet in current round";
+
+    const response = await fetch(`${baseUrl}/games/bet/cashout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        playerId: "player-1",
+      }),
+    });
+
+    cashoutBetUseCase.errorMessage = undefined;
+
+    expect(response.status).toBe(409);
+
+    const body = await response.json();
+
+    expect(body).toHaveProperty("statusCode", 409);
+    expect(body).toHaveProperty("error", "Conflict");
+    expect(body).toHaveProperty("message", "Player has no bet in current round");
   });
 });
