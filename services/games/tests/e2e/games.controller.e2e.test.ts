@@ -8,13 +8,13 @@ import { PlaceBetUseCase, type PlaceBetInput } from "@/application/use-cases/pla
 
 class FakePlaceBetUseCase {
   calls: PlaceBetInput[] = [];
-  shouldFail = false;
+  errorMessage?: string;
 
   async execute(input: PlaceBetInput) {
     this.calls.push(input);
 
-    if (this.shouldFail) {
-      throw new Error("Wallet debit failed: INSUFFICIENT_BALANCE");
+    if (this.errorMessage) {
+      throw new Error(this.errorMessage);
     }
 
     return {
@@ -141,7 +141,7 @@ describe("GamesController E2E", () => {
   });
 
   it("POST /games/bets - maps wallet debit failures to 422", async () => {
-    placeBetUseCase.shouldFail = true;
+    placeBetUseCase.errorMessage = "Wallet debit failed: INSUFFICIENT_BALANCE";
 
     const response = await fetch(`${baseUrl}/games/bets`, {
       method: "POST",
@@ -156,7 +156,7 @@ describe("GamesController E2E", () => {
       }),
     });
 
-    placeBetUseCase.shouldFail = false;
+    placeBetUseCase.errorMessage = undefined;
 
     expect(response.status).toBe(422);
 
@@ -165,5 +165,32 @@ describe("GamesController E2E", () => {
     expect(body).toHaveProperty("statusCode", 422);
     expect(body).toHaveProperty("error", "Unprocessable Entity");
     expect(body).toHaveProperty("message", "Wallet debit failed: INSUFFICIENT_BALANCE");
+  });
+
+  it("POST /games/bets - maps game rule failures to 409", async () => {
+    placeBetUseCase.errorMessage = "Round is not accepting bets";
+
+    const response = await fetch(`${baseUrl}/games/bets`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        playerId: "player-1",
+        roundId: "round-1",
+        betId: "bet-1",
+        amountCents: "250",
+      }),
+    });
+
+    placeBetUseCase.errorMessage = undefined;
+
+    expect(response.status).toBe(409);
+
+    const body = await response.json();
+
+    expect(body).toHaveProperty("statusCode", 409);
+    expect(body).toHaveProperty("error", "Conflict");
+    expect(body).toHaveProperty("message", "Round is not accepting bets");
   });
 });

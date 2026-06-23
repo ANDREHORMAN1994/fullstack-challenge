@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Post, UnprocessableEntityException } from "@nestjs/common";
+import {
+  Body,
+  ConflictException,
+  Controller,
+  Get,
+  Post,
+  UnprocessableEntityException,
+} from "@nestjs/common";
 import { HealthCheckResponseDto } from "../dtos/health-check-response.dto";
 import { PlaceBetRequestDto } from "../dtos/place-bet-request.dto";
 import { PlaceBetUseCase } from "@/application/use-cases/place-bet.use-case";
@@ -26,6 +33,18 @@ export class GamesController {
     } catch (error) {
       if (error instanceof Error && error.message.startsWith("Wallet debit failed")) {
         throw new UnprocessableEntityException(error.message);
+      }
+
+      if (
+        error instanceof Error &&
+        [
+          "No active round",
+          "Round is not accepting bets",
+          "Bet round does not match current round",
+          "Player already placed a bet in this round",
+        ].includes(error.message)
+      ) {
+        throw new ConflictException(error.message);
       }
 
       throw error;

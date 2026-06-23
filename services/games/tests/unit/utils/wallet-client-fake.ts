@@ -1,6 +1,8 @@
 import { WalletClient } from "@/application/clients/wallet.client";
 import { BetsRepository } from "@/application/repositories/bet.repository";
+import { RoundsRepository } from "@/application/repositories/rounds.repository";
 import { Bet } from "@/domain/entities/bet.entity";
+import { Round } from "@/domain/entities/round.entity";
 import {
   WalletCreditCashoutRequest,
   WalletDebitBetRequest,
@@ -34,6 +36,7 @@ export class FakeBetRepository extends BetsRepository {
 
     if (betIndex >= 0) {
       this.bets[betIndex] = bet;
+      return bet;
     }
 
     this.bets.push(bet);
@@ -50,5 +53,42 @@ export class FakeBetRepository extends BetsRepository {
 
   getBets() {
     return this.bets;
+  }
+}
+
+export class FakeRoundsRepository extends RoundsRepository {
+  private rounds: Round[] = [];
+
+  constructor(currentRound?: Round | null) {
+    super();
+
+    if (currentRound) {
+      this.rounds.push(currentRound);
+    }
+  }
+
+  async save(round: Round): Promise<Round> {
+    const roundIndex = this.rounds.findIndex((storedRound) => storedRound.id === round.id);
+
+    if (roundIndex >= 0) {
+      this.rounds[roundIndex] = round;
+      return round;
+    }
+
+    this.rounds.push(round);
+    return round;
+  }
+
+  async findById(id: string): Promise<Round | null> {
+    return this.rounds.find((round) => round.id === id) ?? null;
+  }
+
+  async findCurrent(): Promise<Round | null> {
+    return (
+      [...this.rounds]
+        .filter((round) => round.getStatus() !== "SETTLED")
+        .sort((left, right) => right.getCreatedAt().getTime() - left.getCreatedAt().getTime())[0] ??
+      null
+    );
   }
 }

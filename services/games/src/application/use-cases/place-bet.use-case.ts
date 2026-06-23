@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { WalletClient } from "../clients/wallet.client";
 import { Bet } from "@/domain/entities/bet.entity";
 import { BetsRepository } from "../repositories/bet.repository";
+import { RoundsRepository } from "../repositories/rounds.repository";
 
 export type PlaceBetInput = {
   playerId: string;
@@ -25,17 +26,39 @@ export class PlaceBetUseCase {
   constructor(
     private walletClient: WalletClient,
     private betsRepository: BetsRepository,
+    private roundsRepository: RoundsRepository,
   ) {}
 
   async execute(input: PlaceBetInput): Promise<PlaceBetOutput> {
+    const currentRound = await this.roundsRepository.findCurrent();
+
+    if (!currentRound) {
+      throw new Error("No active round");
+    }
+
+    currentRound.ensureAcceptsBets();
+
+    if (input.roundId.trim() !== currentRound.id) {
+      throw new Error("Bet round does not match current round");
+    }
+
     const bet = new Bet({
       id: input.betId,
       playerId: input.playerId,
-      roundId: input.roundId,
+      roundId: currentRound.id,
       amountCents: BigInt(input.amountCents),
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+
+    const existingBet = await this.betsRepository.findByRoundIdAndPlayerId(
+      bet.roundId,
+      bet.playerId,
+    );
+
+    if (existingBet) {
+      throw new Error("Player already placed a bet in this round");
+    }
 
     const operationId = `bet-debit:${bet.id}`;
 
