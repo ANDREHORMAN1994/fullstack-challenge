@@ -1,7 +1,7 @@
-### /health
+### HEALTH CHECK - VERIFY THE WALLET SERVICE IS RUNNING
 GET http://localhost:4002/health
 
-### create wallet /wallets
+### CREATE WALLET - OPEN A WALLET FOR THE TEST PLAYER
 POST http://localhost:4002/wallets
 Content-Type: application/json
 
@@ -10,10 +10,10 @@ Content-Type: application/json
   "currency": "BRL"
 }
 
-### get wallet by playerId /wallets/:playerId
+### GET WALLET - CHECK INITIAL BALANCE AND WALLET DATA
 GET http://localhost:4002/wallets/player-rmq-1
 
-### create transaction /wallets/debit-bet
+### DEBIT BET - SIMULATE GAME SERVICE DEBITING A PLACED BET
 POST http://localhost:4002/wallets/debit-bet
 Content-Type: application/json
 
@@ -25,7 +25,10 @@ Content-Type: application/json
   "referenceBetId": "bet-rmq-1"
 }
 
-### create transaction /wallets/credit-cashout
+### GET WALLET - CHECK BALANCE AFTER BET DEBIT
+GET http://localhost:4002/wallets/player-rmq-1
+
+### CREDIT CASHOUT - SIMULATE GAME SERVICE PAYING A SUCCESSFUL CASHOUT
 POST http://localhost:4002/wallets/credit-cashout
 Content-Type: application/json
 
@@ -36,3 +39,6 @@ Content-Type: application/json
   "referenceRoundId": "round-rmq-1",
   "referenceBetId": "bet-rmq-1"
 }
+
+### GET WALLET - CHECK BALANCE AFTER CASHOUT CREDIT
+GET http://localhost:4002/wallets/player-rmq-1

@@ -1,7 +1,19 @@
-### /health
+### HEALTH CHECK - VERIFY THE GAME SERVICE IS RUNNING
 GET http://localhost:4001/health
 
-### place bet /games/bet
+### CREATE ROUND - OPEN A BETTING ROUND FOR MANUAL TESTING
+POST http://localhost:4001/games/rounds
+Content-Type: application/json
+
+{
+  "roundId": "round-rmq-1",
+  "crashMultiplierBps": 250
+}
+
+### GET CURRENT ROUND - CONFIRM THE ROUND IS IN BETTING PHASE
+GET http://localhost:4001/games/rounds/current
+
+### PLACE BET - BET INTO THE CURRENT BETTING ROUND
 POST http://localhost:4001/games/bet
 Content-Type: application/json
 
@@ -11,10 +23,13 @@ Content-Type: application/json
   "amountCents": "250"
 }
 
-### start current round
+### START CURRENT ROUND - CLOSE BETTING AND BEGIN MULTIPLIER RUN
 POST http://localhost:4001/games/rounds/current/start
 
-### cashout bet /games/bet/cashout
+### GET CURRENT ROUND - CONFIRM THE ROUND IS RUNNING
+GET http://localhost:4001/games/rounds/current
+
+### CASHOUT BET - CASH OUT THE PLAYER BET DURING THE RUNNING PHASE
 POST http://localhost:4001/games/bet/cashout
 Content-Type: application/json
 
@@ -22,8 +37,11 @@ Content-Type: application/json
   "playerId": "player-rmq-1"
 }
 
-### crash current round
+### CRASH CURRENT ROUND - STOP THE MULTIPLIER AT THE CRASH POINT
 POST http://localhost:4001/games/rounds/current/crash
 
-### settle current round
+### SETTLE CURRENT ROUND - MARK REMAINING PLACED BETS AS LOST
 POST http://localhost:4001/games/rounds/current/settle
+
+### GET CURRENT ROUND - EXPECT 404 AFTER SETTLEMENT REMOVES ACTIVE ROUND
+GET http://localhost:4001/games/rounds/current
