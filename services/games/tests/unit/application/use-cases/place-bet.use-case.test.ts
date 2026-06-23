@@ -79,7 +79,7 @@ describe("PlaceBetUseCase", () => {
         playerId: "player-1",
         roundId: "round-1",
         betId: "bet-1",
-        amountCents: "999999",
+        amountCents: "500",
       }),
     ).rejects.toThrow("Wallet debit failed: INSUFFICIENT_BALANCE");
   });
@@ -96,5 +96,59 @@ describe("PlaceBetUseCase", () => {
     });
 
     expect(walletClient.creditCashoutCalls).toHaveLength(0);
+  });
+
+  it("rejects bets below the minimum before debiting the wallet", async () => {
+    const walletClient = new FakeWalletClient(successfulDebitResponse);
+    const placeBetUseCase = new PlaceBetUseCase(walletClient);
+
+    await expect(
+      placeBetUseCase.execute({
+        playerId: "player-1",
+        roundId: "round-1",
+        betId: "bet-1",
+        amountCents: "99",
+      }),
+    ).rejects.toThrow("Bet amount is below minimum");
+
+    expect(walletClient.debitBetCalls).toHaveLength(0);
+  });
+
+  it("rejects bets above the maximum before debiting the wallet", async () => {
+    const walletClient = new FakeWalletClient(successfulDebitResponse);
+    const placeBetUseCase = new PlaceBetUseCase(walletClient);
+
+    await expect(
+      placeBetUseCase.execute({
+        playerId: "player-1",
+        roundId: "round-1",
+        betId: "bet-1",
+        amountCents: "100001",
+      }),
+    ).rejects.toThrow("Bet amount is above maximum");
+
+    expect(walletClient.debitBetCalls).toHaveLength(0);
+  });
+
+  it("normalizes bet identifiers before sending the wallet debit", async () => {
+    const walletClient = new FakeWalletClient(successfulDebitResponse);
+    const placeBetUseCase = new PlaceBetUseCase(walletClient);
+
+    await placeBetUseCase.execute({
+      playerId: " player-1 ",
+      roundId: " round-1 ",
+      betId: " bet-1 ",
+      amountCents: "250",
+    });
+
+    expect(walletClient.debitBetCalls).toEqual([
+      {
+        playerId: "player-1",
+        operationId: "bet-debit:bet-1",
+        amountCents: "250",
+        referenceRoundId: "round-1",
+        referenceBetId: "bet-1",
+      },
+    ]);
   });
 });
