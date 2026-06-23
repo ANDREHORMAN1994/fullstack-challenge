@@ -18,7 +18,8 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["bun-types"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@generated/*": ["./generated/*"]
     }
   },
   "include": ["src/**/*", "tests/**/*"],
