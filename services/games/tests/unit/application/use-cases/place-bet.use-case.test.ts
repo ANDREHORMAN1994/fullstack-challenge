@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { PlaceBetUseCase } from "@/application/use-cases/place-bet.use-case";
-import { FakeWalletClient } from "../../utils/wallet-client-fake";
+import { FakeBetRepository, FakeWalletClient } from "../../utils/wallet-client-fake";
 import type { WalletOperationResponse } from "@crash/contracts";
 
 const successfulDebitResponse: WalletOperationResponse = {
@@ -22,7 +22,8 @@ const successfulDebitResponse: WalletOperationResponse = {
 describe("PlaceBetUseCase", () => {
   it("debits the wallet using a deterministic operationId", async () => {
     const walletClient = new FakeWalletClient(successfulDebitResponse);
-    const placeBetUseCase = new PlaceBetUseCase(walletClient);
+    const betsRepository = new FakeBetRepository();
+    const placeBetUseCase = new PlaceBetUseCase(walletClient, betsRepository);
 
     await placeBetUseCase.execute({
       playerId: "player-1",
@@ -44,7 +45,8 @@ describe("PlaceBetUseCase", () => {
 
   it("returns an accepted bet when wallet debit succeeds", async () => {
     const walletClient = new FakeWalletClient(successfulDebitResponse);
-    const placeBetUseCase = new PlaceBetUseCase(walletClient);
+    const betsRepository = new FakeBetRepository();
+    const placeBetUseCase = new PlaceBetUseCase(walletClient, betsRepository);
 
     const output = await placeBetUseCase.execute({
       playerId: "player-1",
@@ -72,7 +74,8 @@ describe("PlaceBetUseCase", () => {
         message: "Insufficient balance",
       },
     });
-    const placeBetUseCase = new PlaceBetUseCase(walletClient);
+    const betsRepository = new FakeBetRepository();
+    const placeBetUseCase = new PlaceBetUseCase(walletClient, betsRepository);
 
     await expect(
       placeBetUseCase.execute({
@@ -86,7 +89,8 @@ describe("PlaceBetUseCase", () => {
 
   it("does not call wallet credit cashout when placing a bet", async () => {
     const walletClient = new FakeWalletClient(successfulDebitResponse);
-    const placeBetUseCase = new PlaceBetUseCase(walletClient);
+    const betsRepository = new FakeBetRepository();
+    const placeBetUseCase = new PlaceBetUseCase(walletClient, betsRepository);
 
     await placeBetUseCase.execute({
       playerId: "player-1",
@@ -100,7 +104,8 @@ describe("PlaceBetUseCase", () => {
 
   it("rejects bets below the minimum before debiting the wallet", async () => {
     const walletClient = new FakeWalletClient(successfulDebitResponse);
-    const placeBetUseCase = new PlaceBetUseCase(walletClient);
+    const betsRepository = new FakeBetRepository();
+    const placeBetUseCase = new PlaceBetUseCase(walletClient, betsRepository);
 
     await expect(
       placeBetUseCase.execute({
@@ -116,7 +121,8 @@ describe("PlaceBetUseCase", () => {
 
   it("rejects bets above the maximum before debiting the wallet", async () => {
     const walletClient = new FakeWalletClient(successfulDebitResponse);
-    const placeBetUseCase = new PlaceBetUseCase(walletClient);
+    const betsRepository = new FakeBetRepository();
+    const placeBetUseCase = new PlaceBetUseCase(walletClient, betsRepository);
 
     await expect(
       placeBetUseCase.execute({
@@ -132,7 +138,8 @@ describe("PlaceBetUseCase", () => {
 
   it("normalizes bet identifiers before sending the wallet debit", async () => {
     const walletClient = new FakeWalletClient(successfulDebitResponse);
-    const placeBetUseCase = new PlaceBetUseCase(walletClient);
+    const betsRepository = new FakeBetRepository();
+    const placeBetUseCase = new PlaceBetUseCase(walletClient, betsRepository);
 
     await placeBetUseCase.execute({
       playerId: " player-1 ",

@@ -5,8 +5,9 @@
   "scripts": {
     "dev": "bun run --watch src/main.ts",
     "start": "bun run src/main.ts",
-    "test": "bun test tests/unit",
-    "test:e2e": "bun test tests/e2e"
+    "test:unit": "bun test tests/unit",
+    "test:e2e": "bun test tests/e2e",
+    "test:all": "bun test tests/unit && bun test tests/e2e"
   },
   "dependencies": {
     "@crash/contracts": "workspace:*",

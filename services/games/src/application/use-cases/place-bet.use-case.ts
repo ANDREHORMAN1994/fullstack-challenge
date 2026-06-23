@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { WalletClient } from "../clients/wallet.client";
 import { Bet } from "@/domain/entities/bet.entity";
+import { BetsRepository } from "../repositories/bet.repository";
 
 export type PlaceBetInput = {
   playerId: string;
@@ -21,7 +22,10 @@ export type PlaceBetOutput = {
 
 @Injectable()
 export class PlaceBetUseCase {
-  constructor(private walletClient: WalletClient) {}
+  constructor(
+    private walletClient: WalletClient,
+    private betsRepository: BetsRepository,
+  ) {}
 
   async execute(input: PlaceBetInput): Promise<PlaceBetOutput> {
     const bet = new Bet({
@@ -47,12 +51,14 @@ export class PlaceBetUseCase {
       throw new Error(`Wallet debit failed: ${response.error.code}`);
     }
 
+    const savedBet = await this.betsRepository.create(bet);
+
     return {
       accepted: true,
-      betId: bet.id,
-      playerId: bet.playerId,
-      roundId: bet.roundId,
-      amountCents: bet.amountCents.toString(),
+      betId: savedBet.id,
+      playerId: savedBet.playerId,
+      roundId: savedBet.roundId,
+      amountCents: savedBet.amountCents.toString(),
       walletTransactionId: response.transaction.id,
       walletBalanceAfterCents: response.transaction.balanceAfterCents,
     };
