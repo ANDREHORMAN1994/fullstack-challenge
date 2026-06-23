@@ -18,6 +18,28 @@ enum BetStatus {
   LOST
 }
 
+enum RoundStatus {
+  BETTING
+  RUNNING
+  CRASHED
+  SETTLED
+}
+
+model Round {
+  id String @id @default(uuid())
+  status RoundStatus @default(BETTING)
+  crashMultiplierBps Int
+  bettingStartedAt DateTime
+  runningStartedAt DateTime?
+  crashedAt DateTime?
+  settledAt DateTime?
+  createdAt DateTime
+  updatedAt DateTime
+
+  @@index([status, createdAt])
+  @@map("rounds")
+}
+
 model Bet {
   id String @id @default(uuid())
   playerId String
