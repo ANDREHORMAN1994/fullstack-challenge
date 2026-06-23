@@ -7,7 +7,25 @@ services:
       - name: games-routes
         paths:
           - /games
-        strip_path: true
+        strip_path: false
+      - name: games-socketio-routes
+        paths:
+          - /socket.io
+        strip_path: false
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - http://localhost:3000
+          methods:
+            - GET
+            - POST
+            - OPTIONS
+          headers:
+            - Accept
+            - Authorization
+            - Content-Type
+          credentials: true
 
   - name: wallets-service
     url: http://wallets:4002
@@ -15,4 +33,18 @@ services:
       - name: wallets-routes
         paths:
           - /wallets
-        strip_path: true
+        strip_path: false
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - http://localhost:3000
+          methods:
+            - GET
+            - POST
+            - OPTIONS
+          headers:
+            - Accept
+            - Authorization
+            - Content-Type
+          credentials: true
