@@ -4,7 +4,9 @@ export type GameEvent =
       payload: {
         roundId: string;
         status: string;
-        crashMultiplierBps: number;
+        serverSeedHash: string;
+        clientSeed: string;
+        nonce: number;
         bettingStartedAt: string;
       };
     }

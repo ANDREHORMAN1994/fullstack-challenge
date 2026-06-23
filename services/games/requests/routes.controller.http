@@ -6,8 +6,7 @@ POST http://localhost:4001/games/rounds
 Content-Type: application/json
 
 {
-  "roundId": "round-rmq-1",
-  "crashMultiplierBps": 250
+  "roundId": "round-rmq-1"
 }
 
 ### GET CURRENT ROUND - CONFIRM THE ROUND IS IN BETTING PHASE
@@ -42,6 +41,9 @@ POST http://localhost:4001/games/rounds/current/crash
 
 ### SETTLE CURRENT ROUND - MARK REMAINING PLACED BETS AS LOST
 POST http://localhost:4001/games/rounds/current/settle
+
+### VERIFY ROUND - REVEAL SERVER SEED AND CHECK PROVABLY FAIR RESULT
+GET http://localhost:4001/games/rounds/round-rmq-1/verify
 
 ### GET CURRENT ROUND - CHECK 404 OR NEXT BETTING ROUND AFTER SETTLEMENT
 GET http://localhost:4001/games/rounds/current

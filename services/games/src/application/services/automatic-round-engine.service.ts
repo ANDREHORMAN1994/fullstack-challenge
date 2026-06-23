@@ -15,8 +15,6 @@ export type AutomaticRoundEngineConfig = {
   tickIntervalMs: number;
   bettingWindowMs: number;
   settlementDelayMs: number;
-  minCrashMultiplierBps: number;
-  maxCrashMultiplierBps: number;
 };
 
 export const getAutomaticRoundEngineConfig = (): AutomaticRoundEngineConfig => ({
@@ -24,8 +22,6 @@ export const getAutomaticRoundEngineConfig = (): AutomaticRoundEngineConfig => (
   tickIntervalMs: Number(process.env.GAMES_ENGINE_TICK_INTERVAL_MS ?? 500),
   bettingWindowMs: Number(process.env.GAMES_BETTING_WINDOW_MS ?? 10_000),
   settlementDelayMs: Number(process.env.GAMES_SETTLEMENT_DELAY_MS ?? 2_000),
-  minCrashMultiplierBps: Number(process.env.GAMES_MIN_CRASH_MULTIPLIER_BPS ?? 120),
-  maxCrashMultiplierBps: Number(process.env.GAMES_MAX_CRASH_MULTIPLIER_BPS ?? 1_000),
 });
 
 @Injectable()
@@ -84,7 +80,6 @@ export class AutomaticRoundEngineService implements OnModuleInit, OnModuleDestro
     if (!currentRound) {
       await this.createRoundUseCase.execute({
         roundId: this.createRoundId(now),
-        crashMultiplierBps: this.generateCrashMultiplierBps(),
       });
       return;
     }
@@ -142,13 +137,5 @@ export class AutomaticRoundEngineService implements OnModuleInit, OnModuleDestro
 
   private createRoundId(now: Date): string {
     return `round-${now.getTime()}-${globalThis.crypto.randomUUID()}`;
-  }
-
-  private generateCrashMultiplierBps(): number {
-    const min = this.config.minCrashMultiplierBps;
-    const max = this.config.maxCrashMultiplierBps;
-    const randomValue = globalThis.crypto.getRandomValues(new Uint32Array(1))[0] ?? 0;
-
-    return min + (randomValue % (max - min + 1));
   }
 }

@@ -29,7 +29,7 @@ export class CrashCurrentRoundUseCase {
       payload: {
         roundId: output.roundId,
         status: output.status,
-        crashMultiplierBps: output.crashMultiplierBps,
+        crashMultiplierBps: output.crashMultiplierBps ?? savedRound.crashMultiplierBps,
         crashedAt: output.crashedAt ?? now.toISOString(),
       },
     });

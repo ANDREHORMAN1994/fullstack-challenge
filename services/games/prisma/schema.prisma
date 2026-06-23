@@ -29,6 +29,10 @@ model Round {
   id String @id @default(uuid())
   status RoundStatus @default(BETTING)
   crashMultiplierBps Int
+  serverSeed String
+  serverSeedHash String
+  clientSeed String
+  nonce BigInt
   bettingStartedAt DateTime
   runningStartedAt DateTime?
   crashedAt DateTime?

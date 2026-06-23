@@ -5,6 +5,10 @@ const makeRound = (overrides?: Partial<RoundProps>): Round =>
   new Round({
     id: "round-1",
     crashMultiplierBps: 250,
+    serverSeed: "server-seed",
+    serverSeedHash: "server-seed-hash",
+    clientSeed: "client-seed",
+    nonce: 1,
     bettingStartedAt: new Date("2026-01-01T00:00:00.000Z"),
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
     updatedAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -17,6 +21,10 @@ describe("Round Entity", () => {
 
     expect(round.id).toBe("round-1");
     expect(round.crashMultiplierBps).toBe(250);
+    expect(round.serverSeed).toBe("server-seed");
+    expect(round.serverSeedHash).toBe("server-seed-hash");
+    expect(round.clientSeed).toBe("client-seed");
+    expect(round.nonce).toBe(1);
     expect(round.getStatus()).toBe("BETTING");
     expect(round.canAcceptBets()).toBe(true);
     expect(round.canCashout()).toBe(false);
@@ -40,6 +48,14 @@ describe("Round Entity", () => {
     expect(() => makeRound({ crashMultiplierBps: 150.5 })).toThrow(
       "Crash multiplier must be at least 1.00x",
     );
+  });
+
+  it("rejects invalid provably fair fields", () => {
+    expect(() => makeRound({ serverSeed: "" })).toThrow("Server seed cannot be empty");
+    expect(() => makeRound({ serverSeedHash: "" })).toThrow("Server seed hash cannot be empty");
+    expect(() => makeRound({ clientSeed: "" })).toThrow("Client seed cannot be empty");
+    expect(() => makeRound({ nonce: -1 })).toThrow("Nonce must be a non-negative integer");
+    expect(() => makeRound({ nonce: 1.5 })).toThrow("Nonce must be a non-negative integer");
   });
 
   it("rejects invalid round status", () => {

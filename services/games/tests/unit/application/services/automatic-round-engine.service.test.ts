@@ -18,6 +18,10 @@ const makeRound = (overrides?: Partial<RoundProps>): Round =>
   new Round({
     id: "round-1",
     crashMultiplierBps: 250,
+    serverSeed: "server-seed",
+    serverSeedHash: "server-seed-hash",
+    clientSeed: "client-seed",
+    nonce: 1,
     bettingStartedAt: new Date("2026-01-01T00:00:00.000Z"),
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
     updatedAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -55,8 +59,6 @@ describe("AutomaticRoundEngineService", () => {
       GAMES_ENGINE_ENABLED: "false",
       GAMES_BETTING_WINDOW_MS: "10000",
       GAMES_SETTLEMENT_DELAY_MS: "2000",
-      GAMES_MIN_CRASH_MULTIPLIER_BPS: "250",
-      GAMES_MAX_CRASH_MULTIPLIER_BPS: "250",
     };
   });
 
@@ -73,7 +75,10 @@ describe("AutomaticRoundEngineService", () => {
     const currentRound = await roundsRepository.findCurrent();
 
     expect(currentRound?.getStatus()).toBe("BETTING");
-    expect(currentRound?.crashMultiplierBps).toBe(250);
+    expect(currentRound?.crashMultiplierBps).toBeGreaterThanOrEqual(100);
+    expect(currentRound?.serverSeed).toHaveLength(64);
+    expect(currentRound?.serverSeedHash).toHaveLength(64);
+    expect(currentRound?.clientSeed).toBe(currentRound?.id);
     expect(currentRound?.id).toStartWith("round-1767225600000-");
   });
 

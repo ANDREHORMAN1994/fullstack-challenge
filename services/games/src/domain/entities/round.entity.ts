@@ -4,6 +4,10 @@ export type RoundProps = {
   id: string;
   status?: RoundStatus;
   crashMultiplierBps: number;
+  serverSeed: string;
+  serverSeedHash: string;
+  clientSeed: string;
+  nonce: number;
   bettingStartedAt: Date;
   runningStartedAt?: Date;
   crashedAt?: Date;
@@ -17,6 +21,10 @@ export const MIN_CRASH_MULTIPLIER_BPS = 100;
 export class Round {
   readonly id: string;
   readonly crashMultiplierBps: number;
+  readonly serverSeed: string;
+  readonly serverSeedHash: string;
+  readonly clientSeed: string;
+  readonly nonce: number;
   private status: RoundStatus;
   private bettingStartedAt: Date;
   private runningStartedAt?: Date;
@@ -37,6 +45,22 @@ export class Round {
       throw new Error("Crash multiplier must be at least 1.00x");
     }
 
+    if (!props.serverSeed || props.serverSeed.trim() === "") {
+      throw new Error("Server seed cannot be empty");
+    }
+
+    if (!props.serverSeedHash || props.serverSeedHash.trim() === "") {
+      throw new Error("Server seed hash cannot be empty");
+    }
+
+    if (!props.clientSeed || props.clientSeed.trim() === "") {
+      throw new Error("Client seed cannot be empty");
+    }
+
+    if (!Number.isInteger(props.nonce) || props.nonce < 0) {
+      throw new Error("Nonce must be a non-negative integer");
+    }
+
     const status = props.status ?? "BETTING";
 
     if (!["BETTING", "RUNNING", "CRASHED", "SETTLED"].includes(status)) {
@@ -47,6 +71,10 @@ export class Round {
 
     this.id = props.id.trim();
     this.crashMultiplierBps = props.crashMultiplierBps;
+    this.serverSeed = props.serverSeed.trim();
+    this.serverSeedHash = props.serverSeedHash.trim();
+    this.clientSeed = props.clientSeed.trim();
+    this.nonce = props.nonce;
     this.status = status;
     this.bettingStartedAt = new Date(props.bettingStartedAt);
     this.runningStartedAt = props.runningStartedAt

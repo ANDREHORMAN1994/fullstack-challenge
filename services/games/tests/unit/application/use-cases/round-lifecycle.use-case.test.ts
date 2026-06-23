@@ -10,6 +10,10 @@ const makeRound = (overrides?: Partial<RoundProps>): Round =>
   new Round({
     id: "round-1",
     crashMultiplierBps: 250,
+    serverSeed: "server-seed",
+    serverSeedHash: "server-seed-hash",
+    clientSeed: "client-seed",
+    nonce: 1,
     bettingStartedAt: new Date("2026-01-01T00:00:00.000Z"),
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
     updatedAt: new Date("2026-01-01T00:00:00.000Z"),

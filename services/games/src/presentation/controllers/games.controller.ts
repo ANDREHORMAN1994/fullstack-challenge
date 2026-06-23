@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   NotFoundException,
+  Param,
   Post,
   UnprocessableEntityException,
 } from "@nestjs/common";
@@ -22,6 +23,8 @@ import { StartCurrentRoundUseCase } from "@/application/use-cases/start-current-
 import { CrashCurrentRoundUseCase } from "@/application/use-cases/crash-current-round.use-case";
 import { SettleCurrentRoundUseCase } from "@/application/use-cases/settle-current-round.use-case";
 import { SettleCurrentRoundResponseDto } from "../dtos/settle-current-round-response.dto";
+import { GetRoundVerificationUseCase } from "@/application/use-cases/get-round-verification.use-case";
+import { RoundVerificationResponseDto } from "../dtos/round-verification-response.dto";
 
 @Controller()
 export class GamesController {
@@ -33,6 +36,7 @@ export class GamesController {
     private readonly startCurrentRoundUseCase: StartCurrentRoundUseCase,
     private readonly crashCurrentRoundUseCase: CrashCurrentRoundUseCase,
     private readonly settleCurrentRoundUseCase: SettleCurrentRoundUseCase,
+    private readonly getRoundVerificationUseCase: GetRoundVerificationUseCase,
   ) {}
 
   @Get("health")
@@ -56,12 +60,38 @@ export class GamesController {
     try {
       const round = await this.createRoundUseCase.execute({
         roundId: body.roundId,
-        crashMultiplierBps: body.crashMultiplierBps,
+        serverSeed: body.serverSeed,
+        clientSeed: body.clientSeed,
+        nonce: body.nonce,
       });
 
       return new RoundResponseDto(round);
     } catch (error) {
       if (error instanceof Error && error.message === "There is already an active round") {
+        throw new ConflictException(error.message);
+      }
+
+      throw error;
+    }
+  }
+
+  @Get("games/rounds/:roundId/verify")
+  async getRoundVerification(
+    @Param("roundId") roundId: string,
+  ): Promise<RoundVerificationResponseDto> {
+    try {
+      const verification = await this.getRoundVerificationUseCase.execute(roundId);
+
+      return new RoundVerificationResponseDto(verification);
+    } catch (error) {
+      if (error instanceof Error && error.message === "Round not found") {
+        throw new NotFoundException(error.message);
+      }
+
+      if (
+        error instanceof Error &&
+        error.message === "Round verification is only available after crash"
+      ) {
         throw new ConflictException(error.message);
       }
 

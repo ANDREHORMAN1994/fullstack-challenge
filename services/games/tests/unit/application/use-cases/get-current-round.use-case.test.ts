@@ -16,6 +16,10 @@ describe("GetCurrentRoundUseCase", () => {
     const round = new Round({
       id: "round-1",
       crashMultiplierBps: 250,
+      serverSeed: "server-seed",
+      serverSeedHash: "server-seed-hash",
+      clientSeed: "client-seed",
+      nonce: 1,
       bettingStartedAt: new Date("2026-01-01T00:00:00.000Z"),
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
       updatedAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -27,7 +31,11 @@ describe("GetCurrentRoundUseCase", () => {
     expect(output).toEqual({
       roundId: "round-1",
       status: "BETTING",
-      crashMultiplierBps: 250,
+      crashMultiplierBps: undefined,
+      serverSeedHash: "server-seed-hash",
+      clientSeed: "client-seed",
+      nonce: 1,
+      serverSeed: undefined,
       bettingStartedAt: "2026-01-01T00:00:00.000Z",
       runningStartedAt: undefined,
       crashedAt: undefined,

@@ -21,6 +21,10 @@ import {
   SettleCurrentRoundUseCase,
   type SettleCurrentRoundOutput,
 } from "@/application/use-cases/settle-current-round.use-case";
+import {
+  GetRoundVerificationUseCase,
+  type RoundVerificationOutput,
+} from "@/application/use-cases/get-round-verification.use-case";
 
 class FakePlaceBetUseCase {
   calls: PlaceBetInput[] = [];
@@ -73,7 +77,9 @@ class FakeCashoutBetUseCase {
 const roundResponse: RoundOutput = {
   roundId: "round-1",
   status: "BETTING",
-  crashMultiplierBps: 250,
+  serverSeedHash: "server-seed-hash",
+  clientSeed: "client-seed",
+  nonce: 1,
   bettingStartedAt: "2026-01-01T00:00:00.000Z",
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
@@ -93,7 +99,9 @@ class FakeCreateRoundUseCase {
     return {
       ...roundResponse,
       roundId: input.roundId,
-      crashMultiplierBps: input.crashMultiplierBps,
+      serverSeedHash: "server-seed-hash",
+      clientSeed: input.clientSeed ?? input.roundId,
+      nonce: input.nonce ?? 1,
     };
   }
 }
@@ -163,6 +171,27 @@ class FakeSettleCurrentRoundUseCase {
   }
 }
 
+class FakeGetRoundVerificationUseCase {
+  errorMessage?: string;
+
+  async execute(roundId: string): Promise<RoundVerificationOutput> {
+    if (this.errorMessage) {
+      throw new Error(this.errorMessage);
+    }
+
+    return {
+      roundId,
+      status: "SETTLED",
+      serverSeed: "server-seed",
+      serverSeedHash: "server-seed-hash",
+      clientSeed: "client-seed",
+      nonce: 1,
+      crashMultiplierBps: 250,
+      verified: true,
+    };
+  }
+}
+
 @Module({
   controllers: [GamesController],
   providers: [
@@ -194,6 +223,10 @@ class FakeSettleCurrentRoundUseCase {
       provide: SettleCurrentRoundUseCase,
       useClass: FakeSettleCurrentRoundUseCase,
     },
+    {
+      provide: GetRoundVerificationUseCase,
+      useClass: FakeGetRoundVerificationUseCase,
+    },
   ],
 })
 class TestAppModule {}
@@ -208,6 +241,7 @@ describe("GamesController E2E", () => {
   let startCurrentRoundUseCase: FakeStartCurrentRoundUseCase;
   let crashCurrentRoundUseCase: FakeCrashCurrentRoundUseCase;
   let settleCurrentRoundUseCase: FakeSettleCurrentRoundUseCase;
+  let getRoundVerificationUseCase: FakeGetRoundVerificationUseCase;
 
   beforeAll(async () => {
     app = await NestFactory.create(TestAppModule, { logger: false });
@@ -236,6 +270,7 @@ describe("GamesController E2E", () => {
     startCurrentRoundUseCase = app.get(StartCurrentRoundUseCase);
     crashCurrentRoundUseCase = app.get(CrashCurrentRoundUseCase);
     settleCurrentRoundUseCase = app.get(SettleCurrentRoundUseCase);
+    getRoundVerificationUseCase = app.get(GetRoundVerificationUseCase);
   });
 
   afterAll(async () => {
@@ -285,7 +320,9 @@ describe("GamesController E2E", () => {
       },
       body: JSON.stringify({
         roundId: "round-2",
-        crashMultiplierBps: 300,
+        serverSeed: "server-seed",
+        clientSeed: "client-seed",
+        nonce: 2,
       }),
     });
 
@@ -293,11 +330,14 @@ describe("GamesController E2E", () => {
     await expect(response.json()).resolves.toEqual({
       ...roundResponse,
       roundId: "round-2",
-      crashMultiplierBps: 300,
+      clientSeed: "client-seed",
+      nonce: 2,
     });
     expect(createRoundUseCase.calls[createRoundUseCase.calls.length - 1]).toEqual({
       roundId: "round-2",
-      crashMultiplierBps: 300,
+      serverSeed: "server-seed",
+      clientSeed: "client-seed",
+      nonce: 2,
     });
   });
 
@@ -309,7 +349,7 @@ describe("GamesController E2E", () => {
       },
       body: JSON.stringify({
         roundId: "",
-        crashMultiplierBps: 99,
+        nonce: -1,
         unexpected: "not-allowed",
       }),
     });
@@ -322,7 +362,7 @@ describe("GamesController E2E", () => {
     expect(body).toHaveProperty("error", "Bad Request");
     expect(body.message).toContain("property unexpected should not exist");
     expect(body.message).toContain("roundId should not be empty");
-    expect(body.message).toContain("crashMultiplierBps must not be less than 100");
+    expect(body.message).toContain("nonce must not be less than 0");
   });
 
   it("POST /games/rounds - maps active round conflicts to 409", async () => {
@@ -335,7 +375,6 @@ describe("GamesController E2E", () => {
       },
       body: JSON.stringify({
         roundId: "round-2",
-        crashMultiplierBps: 300,
       }),
     });
 
@@ -348,6 +387,42 @@ describe("GamesController E2E", () => {
     expect(body).toHaveProperty("statusCode", 409);
     expect(body).toHaveProperty("error", "Conflict");
     expect(body).toHaveProperty("message", "There is already an active round");
+  });
+
+  it("GET /games/rounds/:roundId/verify - returns provably fair verification data", async () => {
+    const response = await fetch(`${baseUrl}/games/rounds/round-1/verify`);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      roundId: "round-1",
+      status: "SETTLED",
+      serverSeed: "server-seed",
+      serverSeedHash: "server-seed-hash",
+      clientSeed: "client-seed",
+      nonce: 1,
+      crashMultiplierBps: 250,
+      verified: true,
+    });
+  });
+
+  it("GET /games/rounds/:roundId/verify - maps missing rounds to 404", async () => {
+    getRoundVerificationUseCase.errorMessage = "Round not found";
+
+    const response = await fetch(`${baseUrl}/games/rounds/missing/verify`);
+
+    getRoundVerificationUseCase.errorMessage = undefined;
+
+    expect(response.status).toBe(404);
+  });
+
+  it("GET /games/rounds/:roundId/verify - maps active rounds to 409", async () => {
+    getRoundVerificationUseCase.errorMessage = "Round verification is only available after crash";
+
+    const response = await fetch(`${baseUrl}/games/rounds/round-1/verify`);
+
+    getRoundVerificationUseCase.errorMessage = undefined;
+
+    expect(response.status).toBe(409);
   });
 
   it("POST /games/rounds/current/start - starts the current round", async () => {

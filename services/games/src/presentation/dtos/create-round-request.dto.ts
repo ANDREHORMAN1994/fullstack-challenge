@@ -1,11 +1,20 @@
-import { IsInt, IsNotEmpty, IsString, Min } from "class-validator";
+import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from "class-validator";
 
 export class CreateRoundRequestDto {
   @IsString()
   @IsNotEmpty()
   roundId!: string;
 
+  @IsString()
+  @IsOptional()
+  serverSeed?: string;
+
+  @IsString()
+  @IsOptional()
+  clientSeed?: string;
+
   @IsInt()
-  @Min(100)
-  crashMultiplierBps!: number;
+  @Min(0)
+  @IsOptional()
+  nonce?: number;
 }

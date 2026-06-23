@@ -11,6 +11,8 @@ import { SettleCurrentRoundUseCase } from "./use-cases/settle-current-round.use-
 import { AutomaticRoundEngineService } from "./services/automatic-round-engine.service";
 import { GameEventsPublisher } from "./events/game-events.publisher";
 import { SocketioGameEventsPublisher } from "@/infrastructure/realtime/socketio-game-events.publisher";
+import { ProvablyFairService } from "@/domain/services/provably-fair.service";
+import { GetRoundVerificationUseCase } from "./use-cases/get-round-verification.use-case";
 
 @Module({
   imports: [MessagingModule, DatabaseModule],
@@ -22,7 +24,9 @@ import { SocketioGameEventsPublisher } from "@/infrastructure/realtime/socketio-
     StartCurrentRoundUseCase,
     CrashCurrentRoundUseCase,
     SettleCurrentRoundUseCase,
+    GetRoundVerificationUseCase,
     AutomaticRoundEngineService,
+    ProvablyFairService,
     SocketioGameEventsPublisher,
     {
       provide: GameEventsPublisher,
@@ -37,7 +41,9 @@ import { SocketioGameEventsPublisher } from "@/infrastructure/realtime/socketio-
     StartCurrentRoundUseCase,
     CrashCurrentRoundUseCase,
     SettleCurrentRoundUseCase,
+    GetRoundVerificationUseCase,
     AutomaticRoundEngineService,
+    ProvablyFairService,
     SocketioGameEventsPublisher,
     GameEventsPublisher,
   ],
