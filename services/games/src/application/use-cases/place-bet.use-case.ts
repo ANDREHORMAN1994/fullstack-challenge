@@ -6,7 +6,6 @@ import { RoundsRepository } from "../repositories/rounds.repository";
 
 export type PlaceBetInput = {
   playerId: string;
-  roundId: string;
   betId: string;
   amountCents: string;
 };
@@ -37,10 +36,6 @@ export class PlaceBetUseCase {
     }
 
     currentRound.ensureAcceptsBets();
-
-    if (input.roundId.trim() !== currentRound.id) {
-      throw new Error("Bet round does not match current round");
-    }
 
     const bet = new Bet({
       id: input.betId,

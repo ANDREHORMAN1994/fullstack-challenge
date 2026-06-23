@@ -58,14 +58,13 @@ export class GamesController {
     }
   }
 
-  @Post("games/bets")
-  async placeBetRequest(@Body() body: PlaceBetRequestDto) {
+  @Post("games/bet")
+  async placeBet(@Body() body: PlaceBetRequestDto) {
     try {
       const response = await this.placeBetUseCase.execute({
         betId: body.betId,
         amountCents: body.amountCents,
         playerId: body.playerId,
-        roundId: body.roundId,
       });
       return new PlaceBetResponseDto(response);
     } catch (error) {
@@ -78,7 +77,6 @@ export class GamesController {
         [
           "No active round",
           "Round is not accepting bets",
-          "Bet round does not match current round",
           "Player already placed a bet in this round",
         ].includes(error.message)
       ) {

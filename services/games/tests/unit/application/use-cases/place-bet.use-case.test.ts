@@ -48,7 +48,6 @@ describe("PlaceBetUseCase", () => {
 
     await placeBetUseCase.execute({
       playerId: "player-1",
-      roundId: "round-1",
       betId: "bet-1",
       amountCents: "250",
     });
@@ -69,7 +68,6 @@ describe("PlaceBetUseCase", () => {
 
     const output = await placeBetUseCase.execute({
       playerId: "player-1",
-      roundId: "round-1",
       betId: "bet-1",
       amountCents: "250",
     });
@@ -98,7 +96,6 @@ describe("PlaceBetUseCase", () => {
     await expect(
       placeBetUseCase.execute({
         playerId: "player-1",
-        roundId: "round-1",
         betId: "bet-1",
         amountCents: "500",
       }),
@@ -111,7 +108,6 @@ describe("PlaceBetUseCase", () => {
 
     await placeBetUseCase.execute({
       playerId: "player-1",
-      roundId: "round-1",
       betId: "bet-1",
       amountCents: "250",
     });
@@ -126,7 +122,6 @@ describe("PlaceBetUseCase", () => {
     await expect(
       placeBetUseCase.execute({
         playerId: "player-1",
-        roundId: "round-1",
         betId: "bet-1",
         amountCents: "99",
       }),
@@ -142,7 +137,6 @@ describe("PlaceBetUseCase", () => {
     await expect(
       placeBetUseCase.execute({
         playerId: "player-1",
-        roundId: "round-1",
         betId: "bet-1",
         amountCents: "100001",
       }),
@@ -157,7 +151,6 @@ describe("PlaceBetUseCase", () => {
 
     await placeBetUseCase.execute({
       playerId: " player-1 ",
-      roundId: " round-1 ",
       betId: " bet-1 ",
       amountCents: "250",
     });
@@ -182,7 +175,6 @@ describe("PlaceBetUseCase", () => {
 
     await placeBetUseCase.execute({
       playerId: "player-1",
-      roundId: "round-1",
       betId: "bet-1",
       amountCents: "250",
     });
@@ -202,7 +194,6 @@ describe("PlaceBetUseCase", () => {
     await expect(
       placeBetUseCase.execute({
         playerId: "player-1",
-        roundId: "round-1",
         betId: "bet-1",
         amountCents: "250",
       }),
@@ -226,27 +217,10 @@ describe("PlaceBetUseCase", () => {
     await expect(
       placeBetUseCase.execute({
         playerId: "player-1",
-        roundId: "round-1",
         betId: "bet-1",
         amountCents: "250",
       }),
     ).rejects.toThrow("Round is not accepting bets");
-
-    expect(walletClient.debitBetCalls).toHaveLength(0);
-  });
-
-  it("rejects when input roundId does not match the current round", async () => {
-    const walletClient = new FakeWalletClient(successfulDebitResponse);
-    const placeBetUseCase = makePlaceBetUseCase(walletClient);
-
-    await expect(
-      placeBetUseCase.execute({
-        playerId: "player-1",
-        roundId: "round-stale",
-        betId: "bet-1",
-        amountCents: "250",
-      }),
-    ).rejects.toThrow("Bet round does not match current round");
 
     expect(walletClient.debitBetCalls).toHaveLength(0);
   });
@@ -270,7 +244,6 @@ describe("PlaceBetUseCase", () => {
     await expect(
       placeBetUseCase.execute({
         playerId: "player-1",
-        roundId: "round-1",
         betId: "bet-2",
         amountCents: "250",
       }),

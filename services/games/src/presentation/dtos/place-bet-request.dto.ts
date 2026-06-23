@@ -7,10 +7,6 @@ export class PlaceBetRequestDto {
 
   @IsString()
   @IsNotEmpty()
-  roundId!: string;
-
-  @IsString()
-  @IsNotEmpty()
   betId!: string;
 
   @IsString()

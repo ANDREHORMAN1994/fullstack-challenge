@@ -27,7 +27,7 @@ class FakePlaceBetUseCase {
       accepted: true,
       betId: input.betId,
       playerId: input.playerId,
-      roundId: input.roundId,
+      roundId: "round-1",
       amountCents: input.amountCents,
       walletTransactionId: "transaction-1",
       walletBalanceAfterCents: "750",
@@ -234,15 +234,14 @@ describe("GamesController E2E", () => {
     expect(body).toHaveProperty("message", "There is already an active round");
   });
 
-  it("POST /games/bets - places a bet", async () => {
-    const response = await fetch(`${baseUrl}/games/bets`, {
+  it("POST /games/bet - places a bet in the current round", async () => {
+    const response = await fetch(`${baseUrl}/games/bet`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         playerId: "player-1",
-        roundId: "round-1",
         betId: "bet-1",
         amountCents: "250",
       }),
@@ -260,21 +259,20 @@ describe("GamesController E2E", () => {
     });
     expect(placeBetUseCase.calls[placeBetUseCase.calls.length - 1]).toEqual({
       playerId: "player-1",
-      roundId: "round-1",
       betId: "bet-1",
       amountCents: "250",
     });
   });
 
-  it("POST /games/bets - rejects invalid payloads", async () => {
-    const response = await fetch(`${baseUrl}/games/bets`, {
+  it("POST /games/bet - rejects invalid payloads", async () => {
+    const response = await fetch(`${baseUrl}/games/bet`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         playerId: "player-1",
-        roundId: "",
+        roundId: "round-1",
         betId: "bet-1",
         amountCents: "0",
         unexpected: "not-allowed",
@@ -287,22 +285,21 @@ describe("GamesController E2E", () => {
 
     expect(body).toHaveProperty("statusCode", 400);
     expect(body).toHaveProperty("error", "Bad Request");
+    expect(body.message).toContain("property roundId should not exist");
     expect(body.message).toContain("property unexpected should not exist");
-    expect(body.message).toContain("roundId should not be empty");
     expect(body.message).toContain("amountCents must be a positive integer string");
   });
 
-  it("POST /games/bets - maps wallet debit failures to 422", async () => {
+  it("POST /games/bet - maps wallet debit failures to 422", async () => {
     placeBetUseCase.errorMessage = "Wallet debit failed: INSUFFICIENT_BALANCE";
 
-    const response = await fetch(`${baseUrl}/games/bets`, {
+    const response = await fetch(`${baseUrl}/games/bet`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         playerId: "player-1",
-        roundId: "round-1",
         betId: "bet-1",
         amountCents: "999999",
       }),
@@ -319,17 +316,16 @@ describe("GamesController E2E", () => {
     expect(body).toHaveProperty("message", "Wallet debit failed: INSUFFICIENT_BALANCE");
   });
 
-  it("POST /games/bets - maps game rule failures to 409", async () => {
+  it("POST /games/bet - maps game rule failures to 409", async () => {
     placeBetUseCase.errorMessage = "Round is not accepting bets";
 
-    const response = await fetch(`${baseUrl}/games/bets`, {
+    const response = await fetch(`${baseUrl}/games/bet`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         playerId: "player-1",
-        roundId: "round-1",
         betId: "bet-1",
         amountCents: "250",
       }),
