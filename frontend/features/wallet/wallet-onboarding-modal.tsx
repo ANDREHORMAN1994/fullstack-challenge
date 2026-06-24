@@ -20,7 +20,12 @@ export function WalletOnboardingModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 px-4 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-black/75 px-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="wallet-onboarding-title"
+    >
       <section className="grid w-full max-w-3xl overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 shadow-2xl shadow-black/60 md:grid-cols-[1fr_1.15fr]">
         <div className="relative min-h-64 overflow-hidden bg-black p-6">
           <div className="wallet-glow absolute inset-0" />
@@ -41,7 +46,9 @@ export function WalletOnboardingModal({
 
         <div className="p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">Bem-vindo</p>
-          <h2 className="mt-2 text-3xl font-black text-zinc-50">Crie sua carteira para jogar</h2>
+          <h2 id="wallet-onboarding-title" className="mt-2 text-3xl font-black text-zinc-50">
+            Crie sua carteira para jogar
+          </h2>
           <p className="mt-3 text-sm leading-6 text-zinc-400">
             A carteira é obrigatória para apostar e receber cashouts.
             {demoWalletCreditEnabled

@@ -262,11 +262,19 @@ export function GameDashboard() {
       : 0;
 
   useEffect(() => {
+    if (wallet.isMissing && Swal.isVisible()) {
+      Swal.close();
+    }
+  }, [wallet.isMissing]);
+
+  useEffect(() => {
     if (authStatus !== "authenticated" || !round?.roundId) return;
+    if (wallet.isLoading || wallet.isCreatingWallet || wallet.isMissing || !wallet.wallet) return;
     if (!["RUNNING", "CRASHED"].includes(round.status)) return;
 
     const noticeKey = `${round.roundId}:${round.status}`;
     if (lastRoundNoticeRef.current === noticeKey) return;
+    if (Swal.isVisible() || document.querySelector('[aria-modal="true"]')) return;
     lastRoundNoticeRef.current = noticeKey;
 
     void Swal.fire({
@@ -290,7 +298,15 @@ export function GameDashboard() {
         htmlContainer: "text-zinc-400",
       },
     });
-  }, [authStatus, round?.roundId, round?.status]);
+  }, [
+    authStatus,
+    round?.roundId,
+    round?.status,
+    wallet.isCreatingWallet,
+    wallet.isLoading,
+    wallet.isMissing,
+    wallet.wallet,
+  ]);
 
   return (
     <main className="flex-1 grid w-full min-h-0 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
