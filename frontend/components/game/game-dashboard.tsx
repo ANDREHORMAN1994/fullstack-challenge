@@ -383,7 +383,7 @@ export function GameDashboard() {
             cashout.mutate();
           }}
         />
-        <MyBets bets={myBets} />
+        <MyBets bets={myBets} hasSlice />
       </aside>
     </main>
   );
@@ -718,7 +718,7 @@ function LiveBets({ bets }: { bets: LiveBet[] }) {
         </h2>
         <span className="text-xs text-zinc-500">{bets.length} jogadores</span>
       </div>
-      <div className="h-full min-h-0 flex flex-col justify-center space-y-2 overflow-auto">
+      <div className={`h-full min-h-0 flex flex-col ${bets.length === 0 ? 'justify-center': 'justify-start'} space-y-2 overflow-auto`}>
         {bets.length === 0 ? (
           <p className="py-8 text-center text-sm text-zinc-500">Aguardando apostas...</p>
         ) : null}

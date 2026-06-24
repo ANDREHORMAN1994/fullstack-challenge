@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { formatMultiplier, shortId } from "@/lib/formatters/money";
 
 export function HistoryPlaceholder() {
-  const historyQuery = useRoundHistory(1, 20);
+  const historyQuery = useRoundHistory(1, 50);
   const rounds = historyQuery.data?.items ?? [];
   const [selectedRoundId, setSelectedRoundId] = useState<string | null>(null);
   const selectedRound = rounds.find((round) => round.roundId === selectedRoundId) ?? rounds[0];
@@ -27,8 +27,8 @@ export function HistoryPlaceholder() {
   }, [rounds, selectedRoundId]);
 
   return (
-    <section className="flex-1 w-full grid max-w-7xl h-full gap-4 lg:grid-cols-[1fr_420px]">
-      <div className="rounded-lg border border-zinc-800 bg-zinc-950/80 p-5">
+    <section className="flex-1 w-full grid max-w-7xl min-h-0 h-full gap-4 lg:grid-cols-[1fr_420px]">
+      <div className="min-h-0 rounded-lg border border-zinc-800 bg-zinc-950/80 p-5 overflow-auto">
         <div className="mb-5 flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">
