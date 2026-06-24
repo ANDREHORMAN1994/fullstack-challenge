@@ -2,19 +2,22 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { LogIn, LogOut, Shield, Wallet as WalletIcon } from "lucide-react";
+import { CheckCircle2, Clock3, LogIn, LogOut, Shield, Wallet as WalletIcon, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BetControls } from "@/components/game/bet-controls";
 import { CrashChart } from "@/components/game/crash-chart";
 import { Button } from "@/components/ui/button";
-import { Bet, crashApi, Round } from "@/lib/api";
+import { Bet, crashApi, Round, RoundVerification } from "@/lib/api";
+import { verifyCrashRound } from "@/lib/provably-fair";
 import { createGameSocket, realtimeEvents } from "@/lib/realtime";
 import { formatCents, formatMultiplier, shortId } from "@/lib/utils";
 
 type LiveBet = Bet & {
   status: "PLACED" | "CASHED_OUT" | "LOST";
 };
+
+const BETTING_WINDOW_MS = Number(process.env.NEXT_PUBLIC_BETTING_WINDOW_MS ?? 10000);
 
 export function GameDashboard() {
   const { data: session, status: authStatus } = useSession();
@@ -25,6 +28,7 @@ export function GameDashboard() {
   const [multiplierBps, setMultiplierBps] = useState(10000);
   const [liveBets, setLiveBets] = useState<LiveBet[]>([]);
   const [connected, setConnected] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
 
   const currentRoundQuery = useQuery({
     queryKey: ["current-round"],
@@ -49,6 +53,19 @@ export function GameDashboard() {
     queryFn: () => crashApi.getMyBets(token!),
     enabled: Boolean(token),
   });
+
+  const verificationQuery = useQuery({
+    queryKey: ["round-verification", round?.roundId],
+    queryFn: () => crashApi.getRoundVerification(round!.roundId),
+    enabled: Boolean(round?.roundId && ["CRASHED", "SETTLED"].includes(round.status)),
+    retry: false,
+  });
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 250);
+
+    return () => window.clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (currentRoundQuery.data) {
@@ -102,6 +119,7 @@ export function GameDashboard() {
           setLiveBets((bets) => bets.map((bet) => (bet.status === "PLACED" ? { ...bet, status: "LOST" } : bet)));
           void queryClient.invalidateQueries({ queryKey: ["round-history"] });
           void queryClient.invalidateQueries({ queryKey: ["my-bets"] });
+          void queryClient.invalidateQueries({ queryKey: ["round-verification"] });
         }
 
         if (eventName === "bet.placed") {
@@ -172,6 +190,11 @@ export function GameDashboard() {
     return liveBets.find((bet) => bet.playerId === playerId && bet.status === "PLACED");
   }, [liveBets, session?.user.id]);
 
+  const bettingRemainingMs =
+    round?.status === "BETTING"
+      ? Math.max(0, new Date(round.bettingStartedAt).getTime() + BETTING_WINDOW_MS - now)
+      : 0;
+
   return (
     <main className="mx-auto grid min-h-screen w-full max-w-7xl gap-4 px-4 py-4 lg:grid-cols-[1fr_360px]">
       <section className="space-y-4">
@@ -204,6 +227,7 @@ export function GameDashboard() {
           status={round?.status ?? "BETTING"}
           crashedAtBps={round?.crashMultiplierBps}
         />
+        <RoundProgress round={round} bettingRemainingMs={bettingRemainingMs} />
 
         <section className="grid gap-4 lg:grid-cols-[1fr_300px]">
           <LiveBets bets={liveBets} />
@@ -220,7 +244,7 @@ export function GameDashboard() {
           onCreateWallet={() => createWallet.mutate()}
           creatingWallet={createWallet.isPending}
         />
-        <SeedPanel round={round} />
+        <SeedPanel round={round} verification={verificationQuery.data} />
         <BetControls
           status={round?.status ?? "BETTING"}
           multiplierBps={multiplierBps}
@@ -281,25 +305,125 @@ function PlayerPanel({
   );
 }
 
-function SeedPanel({ round }: { round: Round | null }) {
+function RoundProgress({
+  round,
+  bettingRemainingMs,
+}: {
+  round: Round | null;
+  bettingRemainingMs: number;
+}) {
+  const progress =
+    round?.status === "BETTING"
+      ? Math.min(100, Math.max(0, ((BETTING_WINDOW_MS - bettingRemainingMs) / BETTING_WINDOW_MS) * 100))
+      : round?.status === "RUNNING"
+        ? 100
+        : 0;
+
   return (
     <section className="rounded-lg border border-zinc-800 bg-zinc-950/80 p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">Provably fair</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">Estado da rodada</p>
+          <strong className="mt-1 block text-lg text-zinc-100">
+            {round?.status === "BETTING"
+              ? "Apostas abertas"
+              : round?.status === "RUNNING"
+                ? "Multiplicador em voo"
+                : round?.status === "CRASHED"
+                  ? "Crash revelado"
+                  : "Aguardando engine"}
+          </strong>
+        </div>
+        <div className="inline-flex items-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-sm text-zinc-300">
+          <Clock3 size={16} className="text-cyan-300" />
+          {round?.status === "BETTING" ? `${Math.ceil(bettingRemainingMs / 1000)}s para apostar` : shortId(round?.roundId, 6)}
+        </div>
+      </div>
+      <div className="mt-4 h-2 overflow-hidden rounded-full bg-zinc-900">
+        <div className="h-full rounded-full bg-emerald-400 transition-[width] duration-200" style={{ width: `${progress}%` }} />
+      </div>
+    </section>
+  );
+}
+
+function SeedPanel({
+  round,
+  verification,
+}: {
+  round: Round | null;
+  verification?: RoundVerification;
+}) {
+  const [localCheck, setLocalCheck] = useState<Awaited<ReturnType<typeof verifyCrashRound>> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function verify() {
+      if (!verification) {
+        setLocalCheck(null);
+        return;
+      }
+
+      const result = await verifyCrashRound(verification);
+      if (!cancelled) setLocalCheck(result);
+    }
+
+    void verify();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [verification]);
+
+  const verified =
+    Boolean(verification?.verified) &&
+    Boolean(localCheck?.hashMatches) &&
+    Boolean(localCheck?.multiplierMatches);
+
+  return (
+    <section className="rounded-lg border border-zinc-800 bg-zinc-950/80 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">Provably fair</p>
+        {verification ? (
+          <span className={verified ? "inline-flex items-center gap-1 text-xs font-semibold text-emerald-300" : "inline-flex items-center gap-1 text-xs font-semibold text-rose-300"}>
+            {verified ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+            {verified ? "Verificado" : "Divergente"}
+          </span>
+        ) : null}
+      </div>
       <dl className="mt-3 space-y-3 text-sm">
         <div>
           <dt className="text-zinc-500">Hash antes da rodada</dt>
           <dd className="break-all font-mono text-xs text-emerald-200">{round?.serverSeedHash ?? "-"}</dd>
         </div>
+        {verification ? (
+          <div>
+            <dt className="text-zinc-500">Server seed revelada</dt>
+            <dd className="break-all font-mono text-xs text-zinc-300">{verification.serverSeed}</dd>
+          </div>
+        ) : null}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <dt className="text-zinc-500">Client seed</dt>
-            <dd className="font-mono text-xs text-zinc-300">{round?.clientSeed ?? "-"}</dd>
+            <dd className="font-mono text-xs text-zinc-300">{verification?.clientSeed ?? round?.clientSeed ?? "-"}</dd>
           </div>
           <div>
             <dt className="text-zinc-500">Nonce</dt>
-            <dd className="font-mono text-xs text-zinc-300">{round?.nonce ?? "-"}</dd>
+            <dd className="font-mono text-xs text-zinc-300">{verification?.nonce ?? round?.nonce ?? "-"}</dd>
           </div>
         </div>
+        {verification ? (
+          <div className="grid grid-cols-2 gap-3 rounded-md bg-black/30 p-3">
+            <div>
+              <dt className="text-zinc-500">Crash oficial</dt>
+              <dd className="text-zinc-100">{formatMultiplier(verification.crashMultiplierBps)}</dd>
+            </div>
+            <div>
+              <dt className="text-zinc-500">Recalculado</dt>
+              <dd className="text-zinc-100">{formatMultiplier(localCheck?.crashMultiplierBps)}</dd>
+            </div>
+          </div>
+        ) : null}
       </dl>
     </section>
   );

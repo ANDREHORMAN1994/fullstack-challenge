@@ -10,6 +10,12 @@
     "docker:up": "docker compose up",
     "docker:down": "docker compose down",
     "docker:prune": "docker compose down -v --rmi all --remove-orphans && docker volume prune -f",
+    "contracts:typecheck": "cd packages/contracts && bun run typecheck",
+    "games:typecheck": "cd services/games && bunx tsc --noEmit",
+    "games:test:unit": "cd services/games && bun test tests/unit",
+    "games:test:integration": "cd services/games && DATABASE_URL=postgresql://admin:admin@localhost:5432/games bun test tests/integration",
+    "games:test:e2e": "cd services/games && bun test tests/e2e",
+    "games:test:all": "bun run games:typecheck && bun run games:test:unit && bun run games:test:integration && bun run games:test:e2e",
     "wallets:typecheck": "cd services/wallets && bunx tsc --noEmit",
     "wallets:test:unit": "cd services/wallets && bun test tests/unit",
     "wallets:test:integration": "cd services/wallets && DATABASE_URL=postgresql://admin:admin@localhost:5432/wallets bun test tests/integration",
@@ -17,7 +23,9 @@
     "wallets:test:all": "bun run wallets:typecheck && bun run wallets:test:unit && bun run wallets:test:integration && bun run wallets:test:e2e",
     "frontend:dev": "cd frontend && bun run dev",
     "frontend:typecheck": "cd frontend && bun run typecheck",
-    "frontend:build": "cd frontend && bun run build"
+    "frontend:build": "cd frontend && bun run build",
+    "check:backend": "bun run contracts:typecheck && bun run games:test:all && bun run wallets:test:all",
+    "check:frontend": "bun run frontend:typecheck && bun run frontend:build"
   },
   "devDependencies": {
     "bun-types": "latest"

@@ -54,7 +54,7 @@ services:
     volumes:
       - ./docker/keycloak:/opt/keycloak/data/import:ro
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '200'"]
+      test: ["CMD-SHELL", "bash -ec '</dev/tcp/127.0.0.1/9000'"]
       interval: 10s
       timeout: 5s
       retries: 15
@@ -97,13 +97,14 @@ services:
   # ---------------------------------------------------------------------------
   games:
     build:
-      context: ./services/games
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/games/Dockerfile
     ports:
       - "4001:4001"
-    env_file:
-      - ./services/games/.env
     environment:
+      PORT: "4001"
+      DATABASE_URL: "postgresql://admin:admin@postgres:5432/games"
+      RABBITMQ_URL: "amqp://admin:admin@rabbitmq:5672"
       GAMES_ENGINE_ENABLED: "true"
       GAMES_ENGINE_TICK_INTERVAL_MS: "500"
       GAMES_BETTING_WINDOW_MS: "10000"
@@ -120,7 +121,7 @@ services:
       keycloak:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:4001/health || exit 1"]
+      test: ["CMD-SHELL", "bun -e \"const response = await fetch('http://localhost:4001/health'); process.exit(response.ok ? 0 : 1)\""]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -131,13 +132,14 @@ services:
   # ---------------------------------------------------------------------------
   wallets:
     build:
-      context: ./services/wallets
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/wallets/Dockerfile
     ports:
       - "4002:4002"
-    env_file:
-      - ./services/wallets/.env
     environment:
+      PORT: "4002"
+      DATABASE_URL: "postgresql://admin:admin@postgres:5432/wallets"
+      RABBITMQ_URL: "amqp://admin:admin@rabbitmq:5672"
       CORS_ORIGIN: "http://localhost:3000"
       KEYCLOAK_ISSUER_URL: "http://localhost:8080/realms/crash-game"
       KEYCLOAK_JWKS_URL: "http://keycloak:8080/realms/crash-game/protocol/openid-connect/certs"
@@ -148,7 +150,7 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:4002/health || exit 1"]
+      test: ["CMD-SHELL", "bun -e \"const response = await fetch('http://localhost:4002/health'); process.exit(response.ok ? 0 : 1)\""]
       interval: 10s
       timeout: 5s
       retries: 10

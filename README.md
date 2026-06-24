@@ -254,28 +254,70 @@ Cada serviço tem:
 
 O placeholder no `docker-compose.yml` está comentado — descomente e adapte com seu `Dockerfile` e porta após criar o scaffold.
 
-### Variáveis de ambiente
+### Execução com Docker Compose
 
-As credenciais de infraestrutura (PostgreSQL, RabbitMQ, Keycloak) estão hardcoded no `docker-compose.yml` — são valores de desenvolvimento local, sem necessidade de `.env` no root.
+O caminho principal de avaliação é o Docker Compose. Ele sobe PostgreSQL, RabbitMQ, Keycloak, Kong, Game Service, Wallet Service e Frontend sem passos manuais.
 
-Cada serviço possui `.env.example` com as variáveis necessárias. Copie para `.env` antes de rodar fora do Docker:
+As migrations Prisma são executadas automaticamente no startup dos containers `games` e `wallets` usando `prisma migrate deploy`.
 
 ```bash
-cp services/games/.env.example services/games/.env
-cp services/wallets/.env.example services/wallets/.env
+bun install
+bun run docker:up
 ```
 
-**Você pode modificar qualquer parte da infra.** Prefere SQS ao invés de RabbitMQ? Outro API Gateway? Outro IdP? Fique à vontade. O único requisito é que **`bun run docker:up` suba tudo**.
+Depois abra:
 
-### Comandos
+| Item        | URL                                                        |
+| ----------- | ---------------------------------------------------------- |
+| Frontend    | `http://localhost:3000`                                    |
+| API Gateway | `http://localhost:8000`                                    |
+| Keycloak    | `http://localhost:8080` (`admin` / `admin`)                |
+| RabbitMQ UI | `http://localhost:15672` (`admin` / `admin`)               |
+
+Usuário de teste:
+
+| Campo   | Valor       |
+| ------- | ----------- |
+| Login   | `player`    |
+| Senha   | `player123` |
+
+### Fluxo manual de avaliação
+
+1. Acesse `http://localhost:3000`.
+2. Clique em `Entrar` e autentique com Keycloak.
+3. Se a wallet ainda não existir, clique em `Criar carteira`.
+4. Aguarde a fase `BETTING`.
+5. Faça uma aposta entre `R$ 1,00` e `R$ 1.000,00`.
+6. Durante `RUNNING`, faça `Cash Out` antes do crash.
+7. Confira saldo, lista de apostas ao vivo e histórico.
+8. Após o crash, confira o painel `Provably fair`; ele revela a seed e recalcula o crash no browser.
+
+### Execução local sem Kong
+
+Para desenvolvimento em terminais separados, use URLs diretas no `frontend/.env`:
+
+```env
+NEXT_PUBLIC_GAMES_API_BASE_URL=http://localhost:4001
+NEXT_PUBLIC_WALLETS_API_BASE_URL=http://localhost:4002
+NEXT_PUBLIC_WS_BASE_URL=http://localhost:4001
+```
+
+Nesse modo, mantenha PostgreSQL, RabbitMQ e Keycloak rodando e suba os serviços em terminais separados:
 
 ```bash
-git clone https://github.com/junglegaming/fullstack-challenge
-cd fullstack-challenge
-bun install
-bun run docker:up      # Sobe tudo (infra + serviços + frontend)
-bun run docker:down    # Para os containers
-bun run docker:prune   # Remove tudo (containers, volumes, imagens)
+cd services/wallets && bun run dev
+cd services/games && bun run dev
+cd frontend && bun run dev
+```
+
+### Comandos úteis
+
+```bash
+bun run docker:up             # Sobe toda a stack
+bun run docker:down           # Para os containers
+bun run docker:prune          # Remove containers, volumes e imagens
+bun run check:backend         # Typecheck + testes backend
+bun run check:frontend        # Typecheck + build frontend
 ```
 
 ---
@@ -315,14 +357,12 @@ fullstack-challenge/
 │   │                                  # Ex: @crash/eslint
 │   └── (pacotes serão adicionados aqui)
 ├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── hooks/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   └── stores/
+│   ├── app/
+│   ├── components/
+│   ├── lib/
+│   ├── types/
 │   ├── Dockerfile
-│   ├── .env
+│   ├── .env.example
 │   └── package.json
 ├── docker/
 │   ├── kong/kong.yml
@@ -355,11 +395,33 @@ fullstack-challenge/
 ### Comandos
 
 ```bash
-cd services/games && bun test tests/unit
-cd services/wallets && bun test tests/unit
-cd services/games && bun test tests/e2e     # requer docker:up
-cd frontend && bun test
+bun run contracts:typecheck
+bun run games:typecheck
+bun run games:test:unit
+bun run games:test:integration
+bun run games:test:e2e
+bun run wallets:typecheck
+bun run wallets:test:unit
+bun run wallets:test:integration
+bun run wallets:test:e2e
+bun run frontend:typecheck
+bun run frontend:build
 ```
+
+Os testes de integração usam PostgreSQL local em `localhost:5432`; suba a infra antes com `bun run docker:up` ou pelo menos o serviço `postgres`.
+
+---
+
+## Decisões de Arquitetura
+
+- **Bounded contexts separados:** Game Service controla rodadas, apostas, cashout, engine, WebSocket e provably fair. Wallet Service controla saldo e transações financeiras.
+- **Dinheiro em centavos:** valores monetários trafegam como centavos inteiros para evitar erro de ponto flutuante.
+- **Idempotência financeira:** débitos e créditos usam `operationId` determinístico para impedir cobrança/pagamento duplicado em retentativas.
+- **Consistência entre serviços:** Game chama Wallet via RabbitMQ; REST público não expõe crédito/débito arbitrário.
+- **Ações por REST, sincronização por WebSocket:** apostar e sacar são comandos HTTP autenticados; eventos em tempo real são server-to-client.
+- **JWT Keycloak:** rotas de jogador usam `playerId` do token, nunca do body.
+- **Provably fair:** antes da rodada o frontend mostra `serverSeedHash`; depois do crash a seed é revelada e o frontend recalcula a prova no browser.
+- **Docker Compose como contrato de entrega:** containers de backend rodam migrations no startup e não dependem de `.env` local.
 
 ---
 
