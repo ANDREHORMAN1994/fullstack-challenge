@@ -14,4 +14,4 @@ COPY services/games ./services/games
 
 EXPOSE 4001
 
-CMD ["sh", "-c", "cd services/games && bunx prisma migrate deploy && bun run start"]
+CMD ["sh", "-c", "cd services/games && bunx prisma generate && bunx prisma migrate deploy && bun run start"]

@@ -14,4 +14,4 @@ COPY services/wallets ./services/wallets
 
 EXPOSE 4002
 
-CMD ["sh", "-c", "cd services/wallets && bunx prisma migrate deploy && bun run start"]
+CMD ["sh", "-c", "cd services/wallets && bunx prisma generate && bunx prisma migrate deploy && bun run start"]

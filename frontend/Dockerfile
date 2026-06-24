@@ -19,6 +19,7 @@ RUN bun run build
 FROM oven/bun:1.3.14-alpine AS runner
 WORKDIR /app/frontend
 ENV NODE_ENV=production
+COPY --from=builder /app/node_modules /app/node_modules
 COPY --from=builder /app/frontend ./
 EXPOSE 3000
 CMD ["bun", "run", "start"]
