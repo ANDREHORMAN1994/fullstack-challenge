@@ -1,5 +1,5 @@
-import { GameDashboard } from "@/components/game/game-dashboard";
+import { redirect } from "next/navigation";
 
 export default function HomePage() {
-  return <GameDashboard />;
+  redirect("/dashboard");
 }

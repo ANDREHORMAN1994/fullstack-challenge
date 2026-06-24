@@ -29,3 +29,87 @@ input {
 ::selection {
   background: rgba(52, 211, 153, 0.35);
 }
+
+.login-aurora {
+  background:
+    radial-gradient(circle at 16% 18%, rgba(16, 185, 129, 0.22), transparent 26rem),
+    radial-gradient(circle at 78% 22%, rgba(34, 211, 238, 0.12), transparent 22rem),
+    radial-gradient(circle at 72% 84%, rgba(244, 63, 94, 0.16), transparent 28rem);
+  animation: aurora-drift 10s ease-in-out infinite alternate;
+}
+
+.crash-orbit {
+  box-shadow: 0 0 70px rgba(52, 211, 153, 0.16);
+  animation: orbit-glow 4.8s ease-in-out infinite;
+}
+
+.crash-orbit-delay {
+  animation-delay: 1.2s;
+}
+
+.login-pulse {
+  animation-name: login-pulse;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-duration: var(--pulse-duration, 2.2s);
+}
+
+
+@keyframes aurora-drift {
+  from {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.08) translate3d(-1.5rem, 1rem, 0);
+  }
+}
+
+@keyframes orbit-glow {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.04);
+  }
+}
+
+@keyframes login-pulse {
+  0% {
+    width: 18%;
+  }
+  55% {
+    width: 78%;
+  }
+  100% {
+    width: 36%;
+  }
+}
+
+.wallet-glow {
+  background:
+    radial-gradient(circle at 50% 40%, rgba(52, 211, 153, 0.24), transparent 12rem),
+    radial-gradient(circle at 75% 72%, rgba(250, 204, 21, 0.14), transparent 10rem),
+    linear-gradient(135deg, rgba(9, 9, 11, 0.2), rgba(5, 5, 6, 0.95));
+  animation: aurora-drift 8s ease-in-out infinite alternate;
+}
+
+.wallet-coin {
+  animation: coin-float 2.8s ease-in-out infinite;
+}
+
+.wallet-coin-delay {
+  animation-delay: 0.9s;
+}
+
+@keyframes coin-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.55rem);
+  }
+}

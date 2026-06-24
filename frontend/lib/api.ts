@@ -30,7 +30,7 @@ export type Bet = {
 };
 
 export type Wallet = {
-  walletId: string;
+  id: string;
   playerId: string;
   balanceCents: string;
   currency: string;
@@ -98,6 +98,16 @@ type RequestOptions = {
   baseUrl?: string;
 };
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const response = await fetch(`${options.baseUrl ?? API_BASE_URL}${path}`, {
     method: options.method ?? "GET",
@@ -111,7 +121,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(text || `Request failed with status ${response.status}`);
+    throw new ApiError(text || `Request failed with status ${response.status}`, response.status);
   }
 
   return response.json() as Promise<T>;
@@ -119,14 +129,14 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
 export const crashApi = {
   getCurrentRound: () => request<Round>("/games/rounds/current", { baseUrl: GAMES_API_BASE_URL }),
-  getRoundHistory: () =>
-    request<PaginatedRounds>("/games/rounds/history?page=1&limit=20", {
+  getRoundHistory: (page = 1, limit = 20) =>
+    request<PaginatedRounds>(`/games/rounds/history?page=${page}&limit=${limit}`, {
       baseUrl: GAMES_API_BASE_URL,
     }),
   getRoundVerification: (roundId: string) =>
     request<RoundVerification>(`/games/rounds/${roundId}/verify`, { baseUrl: GAMES_API_BASE_URL }),
-  getMyBets: (token: string) =>
-    request<PaginatedBets>("/games/bets/me?page=1&limit=20", {
+  getMyBets: (token: string, page = 1, limit = 20) =>
+    request<PaginatedBets>(`/games/bets/me?page=${page}&limit=${limit}`, {
       token,
       baseUrl: GAMES_API_BASE_URL,
     }),
