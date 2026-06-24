@@ -22,11 +22,11 @@ export function getBetStatusClassName(status?: BetStatus) {
 }
 
 export function getCrashPointClassName(multiplierBps?: number) {
-  return (multiplierBps ?? 0) >= 20000
+  return (multiplierBps ?? 0) >= 200
     ? "bg-emerald-400/15 text-emerald-300"
     : "bg-rose-500/15 text-rose-300";
 }
 
 export function getCrashPointTextClassName(multiplierBps?: number) {
-  return (multiplierBps ?? 0) >= 20000 ? "text-emerald-300" : "text-rose-300";
+  return (multiplierBps ?? 0) >= 200 ? "text-emerald-300" : "text-rose-300";
 }

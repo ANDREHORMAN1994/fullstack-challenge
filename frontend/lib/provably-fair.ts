@@ -1,5 +1,5 @@
-const HOUSE_EDGE_BPS = 100;
-const MAX_HASH_SAMPLE = 2 ** 52;
+const HOUSE_EDGE = 0.01;
+const MAX_CRASH_MULTIPLIER_BPS = 500;
 
 function bytesToHex(buffer: ArrayBuffer) {
   return Array.from(new Uint8Array(buffer))
@@ -37,8 +37,13 @@ export async function verifyCrashRound(input: {
   const serverSeedHash = await sha256Hex(input.serverSeed);
   const hmac = await hmacSha256Hex(input.serverSeed, `${input.clientSeed}:${input.nonce}`);
   const sample = Number.parseInt(hmac.slice(0, 13), 16);
-  const fairMultiplier = Math.floor(((10000 - HOUSE_EDGE_BPS) * MAX_HASH_SAMPLE) / (MAX_HASH_SAMPLE - sample));
-  const crashMultiplierBps = Math.max(10000, fairMultiplier);
+  const maxSample = 16 ** 13;
+  const roll = sample / maxSample;
+  const multiplier = Math.max(1, (1 - HOUSE_EDGE) / Math.max(roll, Number.EPSILON));
+  const crashMultiplierBps = Math.min(
+    MAX_CRASH_MULTIPLIER_BPS,
+    Math.max(100, Math.floor(multiplier * 100)),
+  );
 
   return {
     serverSeedHash,

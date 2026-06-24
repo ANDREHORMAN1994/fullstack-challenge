@@ -57,18 +57,25 @@ export function BetControls({
 
   const potentialPayout =
     pendingAmountCents && hasPendingBet
-      ? (BigInt(pendingAmountCents) * BigInt(multiplierBps)) / 10000n
+      ? (BigInt(pendingAmountCents) * BigInt(multiplierBps)) / 100n
       : 0n;
   const amountValue = form.watch("amount");
   const parsedAmountCents = centsFromDecimalString(amountValue || "0");
   const amountCents = Number.isFinite(parsedAmountCents) ? parsedAmountCents : 0;
   const hasInsufficientBalance = walletExists && BigInt(balanceCents ?? 0) < BigInt(amountCents);
   const roundBlocksBetting = status !== "BETTING";
+  const roundBlockedMessage =
+    status === "RUNNING"
+      ? "Rodada em andamento. Próxima entrada em alguns segundos."
+      : status === "CRASHED" || status === "SETTLED"
+        ? "Crash revelado. Aguarde a próxima rodada."
+        : "Aguarde a próxima rodada";
   const betDisabled =
     !isAuthenticated ||
     !walletExists ||
     walletPending ||
     roundBlocksBetting ||
+    hasPendingBet ||
     hasInsufficientBalance ||
     placingBet;
   const betMessage = !isAuthenticated
@@ -79,8 +86,10 @@ export function BetControls({
         ? "Criando carteira..."
         : hasInsufficientBalance
           ? "Saldo insuficiente"
+          : hasPendingBet
+            ? "Aposta enviada para esta rodada"
           : roundBlocksBetting
-            ? "Aguarde a próxima rodada"
+            ? roundBlockedMessage
             : null;
 
   return (
@@ -102,7 +111,12 @@ export function BetControls({
         <label className="block text-xs font-medium text-zinc-500" htmlFor="amount">
           Valor da aposta
         </label>
-        <Input id="amount" inputMode="decimal" {...form.register("amount")} disabled={roundBlocksBetting || walletPending} />
+        <Input
+          id="amount"
+          inputMode="decimal"
+          {...form.register("amount")}
+          disabled={roundBlocksBetting || walletPending || hasPendingBet}
+        />
         {form.formState.errors.amount ? (
           <p className="text-xs text-rose-300">{form.formState.errors.amount.message}</p>
         ) : null}

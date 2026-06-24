@@ -104,8 +104,12 @@ export class CashoutBetUseCase {
     }
 
     const multiplierBps = calculateCurrentMultiplierBps(runningStartedAt, now);
+    const effectiveCrashMultiplierBps = Math.min(
+      round.crashMultiplierBps,
+      Number(process.env.GAMES_MAX_CRASH_MULTIPLIER_BPS ?? 500),
+    );
 
-    if (multiplierBps >= round.crashMultiplierBps) {
+    if (multiplierBps >= effectiveCrashMultiplierBps) {
       throw new Error("Round has already reached the crash multiplier");
     }
 

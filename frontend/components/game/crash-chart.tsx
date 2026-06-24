@@ -11,6 +11,9 @@ type CrashChartProps = {
 
 export function CrashChart({ multiplierBps, status, crashedAtBps }: CrashChartProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const maxDisplayMultiplierBps = Number(process.env.NEXT_PUBLIC_MAX_CRASH_MULTIPLIER_BPS ?? 500);
+  const displayMultiplierBps = Math.min(multiplierBps, maxDisplayMultiplierBps);
+  const displayCrashedAtBps = crashedAtBps ? Math.min(crashedAtBps, maxDisplayMultiplierBps) : undefined;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -35,7 +38,7 @@ export function CrashChart({ multiplierBps, status, crashedAtBps }: CrashChartPr
     const padding = 28;
     const width = rect.width - padding * 2;
     const height = rect.height - padding * 2;
-    const maxMultiplier = Math.max(2, multiplierBps / 10000 + 0.6, (crashedAtBps ?? 0) / 10000);
+    const maxMultiplier = Math.max(2, displayMultiplierBps / 100 + 0.6, (displayCrashedAtBps ?? 0) / 100);
 
     ctx.strokeStyle = "rgba(63, 63, 70, 0.55)";
     ctx.lineWidth = 1;
@@ -61,7 +64,7 @@ export function CrashChart({ multiplierBps, status, crashedAtBps }: CrashChartPr
     for (let i = 0; i <= points; i += 1) {
       const progress = i / points;
       const eased = Math.pow(progress, 1.85);
-      const value = 1 + ((multiplierBps / 10000 - 1) * eased);
+      const value = 1 + ((displayMultiplierBps / 100 - 1) * eased);
       const x = padding + width * progress;
       const y = padding + height - ((value - 1) / (maxMultiplier - 1)) * height;
 
@@ -72,9 +75,9 @@ export function CrashChart({ multiplierBps, status, crashedAtBps }: CrashChartPr
 
     ctx.fillStyle = status === "CRASHED" ? "#fb7185" : "#34d399";
     ctx.beginPath();
-    ctx.arc(padding + width, padding + height - ((multiplierBps / 10000 - 1) / (maxMultiplier - 1)) * height, 6, 0, Math.PI * 2);
+    ctx.arc(padding + width, padding + height - ((displayMultiplierBps / 100 - 1) / (maxMultiplier - 1)) * height, 6, 0, Math.PI * 2);
     ctx.fill();
-  }, [crashedAtBps, multiplierBps, status]);
+  }, [displayCrashedAtBps, displayMultiplierBps, status]);
 
   return (
     <section className="relative min-h-1/2 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950/80">
@@ -82,7 +85,7 @@ export function CrashChart({ multiplierBps, status, crashedAtBps }: CrashChartPr
       <div className="absolute left-5 top-4">
         <p className="w-fit pr-2 text-xs font-medium uppercase tracking-[0.18em] text-zinc-500 bg-zinc-950">Multiplicador</p>
         <strong className="mt-2 block text-6xl font-black text-zinc-50 sm:text-7xl">
-          {formatMultiplier(status === "CRASHED" && crashedAtBps ? crashedAtBps : multiplierBps)}
+          {formatMultiplier(status === "CRASHED" && displayCrashedAtBps ? displayCrashedAtBps : displayMultiplierBps)}
         </strong>
       </div>
       <div className="absolute bottom-5 right-5 rounded-md border border-zinc-800 bg-black/45 px-3 py-2 text-sm text-zinc-300">

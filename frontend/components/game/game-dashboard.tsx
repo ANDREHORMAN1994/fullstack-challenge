@@ -13,7 +13,8 @@ import {
   Wallet as WalletIcon,
   XCircle,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Swal from "sweetalert2";
 import { toast } from "sonner";
 import { BetControls } from "@/components/game/bet-controls";
 import { CrashChart } from "@/components/game/crash-chart";
@@ -38,10 +39,12 @@ export function GameDashboard() {
   const token = session?.accessToken;
   const username = session?.user.username ?? session?.user.name ?? "visitante";
   const [round, setRound] = useState<Round | null>(null);
-  const [multiplierBps, setMultiplierBps] = useState(10000);
+  const [multiplierBps, setMultiplierBps] = useState(100);
   const [liveBets, setLiveBets] = useState<LiveBet[]>([]);
   const [connected, setConnected] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [submittedBetRoundId, setSubmittedBetRoundId] = useState<string | null>(null);
+  const lastRoundNoticeRef = useRef<string | null>(null);
   const playerId = session?.user.id;
 
   const currentRoundQuery = useQuery({
@@ -74,7 +77,7 @@ export function GameDashboard() {
   useEffect(() => {
     if (currentRoundQuery.data) {
       setRound(currentRoundQuery.data);
-      setMultiplierBps(currentRoundQuery.data.crashMultiplierBps ?? 10000);
+      setMultiplierBps(currentRoundQuery.data.crashMultiplierBps ?? 100);
     }
   }, [currentRoundQuery.data]);
 
@@ -95,8 +98,11 @@ export function GameDashboard() {
             createdAt: previous?.createdAt ?? new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           }));
-          setMultiplierBps(10000);
+          setMultiplierBps(100);
           setLiveBets([]);
+          setSubmittedBetRoundId(null);
+          void queryClient.invalidateQueries({ queryKey: ["current-round"] });
+          void queryClient.invalidateQueries({ queryKey: ["my-bets"] });
         }
 
         if (eventName === "round.started") {
@@ -109,7 +115,7 @@ export function GameDashboard() {
                 }
               : previous,
           );
-          setMultiplierBps(10000);
+          setMultiplierBps(100);
         }
 
         if (eventName === "round.multiplier") {
@@ -117,7 +123,9 @@ export function GameDashboard() {
         }
 
         if (eventName === "round.crashed") {
+          const crashedRoundId = String(payload.roundId);
           toast.error("Round crashed", {
+            id: `round-crashed:${crashedRoundId}`,
             description: formatMultiplier(Number(payload.crashMultiplierBps)),
           });
           setRound((previous) =>
@@ -136,7 +144,10 @@ export function GameDashboard() {
               (bet) => bet.playerId === playerId && bet.status === "PLACED",
             );
             if (playerLost)
-              toast.error("Aposta perdida", { description: "O crash chegou antes do cashout." });
+              toast.error("Aposta perdida", {
+                id: `bet-lost:${crashedRoundId}:${playerId ?? "anonymous"}`,
+                description: "O crash chegou antes do cashout.",
+              });
             return bets.map((bet) => (bet.status === "PLACED" ? { ...bet, status: "LOST" } : bet));
           });
           void queryClient.invalidateQueries({ queryKey: ["round-history"] });
@@ -144,8 +155,17 @@ export function GameDashboard() {
           void queryClient.invalidateQueries({ queryKey: ["round-verification"] });
         }
 
+        if (eventName === "round.settled") {
+          void queryClient.invalidateQueries({ queryKey: ["current-round"] });
+          void queryClient.invalidateQueries({ queryKey: ["round-history"] });
+          void queryClient.invalidateQueries({ queryKey: ["my-bets"] });
+        }
+
         if (eventName === "bet.placed") {
           const bet = payload as LiveBet;
+          if (bet.playerId === playerId) {
+            setSubmittedBetRoundId(bet.roundId);
+          }
           setLiveBets((bets) => [
             { ...bet, status: "PLACED" },
             ...bets.filter((item) => item.betId !== bet.betId),
@@ -184,11 +204,15 @@ export function GameDashboard() {
   const placeBet = useMutation({
     mutationFn: (amountCents: number) => crashApi.placeBet(token!, amountCents),
     onSuccess: (response) => {
+      setSubmittedBetRoundId(response.roundId);
       toast.success("Aposta aceita", { description: formatCents(response.amountCents) });
       void queryClient.invalidateQueries({ queryKey: ["wallet"] });
       void queryClient.invalidateQueries({ queryKey: ["my-bets"] });
     },
-    onError: (error) => toast.error("Aposta recusada", { description: error.message }),
+    onError: (error) => {
+      setSubmittedBetRoundId(null);
+      toast.error("Aposta recusada", { description: error.message });
+    },
   });
 
   const cashout = useMutation({
@@ -205,11 +229,68 @@ export function GameDashboard() {
     const playerId = session?.user.id;
     return liveBets.find((bet) => bet.playerId === playerId && bet.status === "PLACED");
   }, [liveBets, session?.user.id]);
+  const hasSubmittedBetForCurrentRound = submittedBetRoundId === round?.roundId;
+
+  const myBets = useMemo(() => {
+    const latestById = new Map<string, Bet>();
+
+    for (const bet of myBetsQuery.data?.items ?? []) {
+      latestById.set(bet.betId, bet);
+    }
+
+    for (const bet of liveBets) {
+      if (bet.playerId === playerId) {
+        latestById.set(bet.betId, bet);
+      }
+    }
+
+    return Array.from(latestById.values()).map((bet) => {
+      const activeRoundCanHavePlacedBet =
+        bet.roundId === round?.roundId && ["BETTING", "RUNNING"].includes(round.status);
+
+      if (bet.status === "PLACED" && !activeRoundCanHavePlacedBet) {
+        return { ...bet, status: "LOST" };
+      }
+
+      return bet;
+    });
+  }, [liveBets, myBetsQuery.data?.items, playerId, round?.roundId, round?.status]);
 
   const bettingRemainingMs =
     round?.status === "BETTING"
       ? Math.max(0, new Date(round.bettingStartedAt).getTime() + BETTING_WINDOW_MS - now)
       : 0;
+
+  useEffect(() => {
+    if (authStatus !== "authenticated" || !round?.roundId) return;
+    if (!["RUNNING", "CRASHED"].includes(round.status)) return;
+
+    const noticeKey = `${round.roundId}:${round.status}`;
+    if (lastRoundNoticeRef.current === noticeKey) return;
+    lastRoundNoticeRef.current = noticeKey;
+
+    void Swal.fire({
+      title: round.status === "RUNNING" ? "Rodada em andamento" : "Crash revelado",
+      text:
+        round.status === "RUNNING"
+          ? "Próxima entrada em alguns segundos. Você poderá apostar assim que a fase BETTING começar."
+          : "Aguarde a próxima rodada para entrar na fase de apostas.",
+      icon: "info",
+      showConfirmButton: false,
+      allowOutsideClick: true,
+      allowEscapeKey: true,
+      scrollbarPadding: false,
+      heightAuto: false,
+      background: "#09090b",
+      color: "#f4f4f5",
+      iconColor: "#34d399",
+      customClass: {
+        popup: "rounded-lg border border-zinc-800 shadow-2xl shadow-black/60",
+        title: "text-zinc-50",
+        htmlContainer: "text-zinc-400",
+      },
+    });
+  }, [authStatus, round?.roundId, round?.status]);
 
   return (
     <main className="flex-1 grid w-full min-h-0 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -245,6 +326,7 @@ export function GameDashboard() {
           status={round?.status ?? "BETTING"}
           crashedAtBps={round?.crashMultiplierBps}
         />
+        <RoundEntryNotice round={round} bettingRemainingMs={bettingRemainingMs} />
         <RoundProgress round={round} bettingRemainingMs={bettingRemainingMs} />
 
         <LiveBets bets={liveBets} />
@@ -263,7 +345,7 @@ export function GameDashboard() {
         <BetControls
           status={round?.status ?? "BETTING"}
           multiplierBps={multiplierBps}
-          hasPendingBet={Boolean(myPendingBet)}
+          hasPendingBet={Boolean(myPendingBet) || hasSubmittedBetForCurrentRound}
           pendingAmountCents={myPendingBet?.amountCents}
           placingBet={placeBet.isPending}
           cashingOut={cashout.isPending}
@@ -277,6 +359,7 @@ export function GameDashboard() {
               toast.error("Crie sua carteira para começar a apostar");
               return;
             }
+            setSubmittedBetRoundId(round?.roundId ?? null);
             placeBet.mutate(amountCents);
           }}
           onCashout={() => {
@@ -284,10 +367,55 @@ export function GameDashboard() {
             cashout.mutate();
           }}
         />
-        <MyBets bets={myBetsQuery.data?.items ?? []} />
+        <MyBets bets={myBets} />
       </aside>
     </main>
   );
+}
+
+function RoundEntryNotice({
+  round,
+  bettingRemainingMs,
+}: {
+  round: Round | null;
+  bettingRemainingMs: number;
+}) {
+  const status = round?.status ?? "BETTING";
+
+  if (status === "BETTING") {
+    return (
+      <section className="rounded-lg border border-emerald-400/25 bg-emerald-400/10 px-4 py-3">
+        <p className="text-sm font-semibold text-emerald-200">
+          Fase de apostas aberta. Você tem {Math.ceil(bettingRemainingMs / 1000)}s para entrar.
+        </p>
+      </section>
+    );
+  }
+
+  if (status === "RUNNING") {
+    return (
+      <section className="rounded-lg border border-amber-300/25 bg-amber-300/10 px-4 py-3">
+        <p className="text-sm font-semibold text-amber-100">
+          Rodada em andamento. Próxima entrada em alguns segundos.
+        </p>
+        <p className="mt-1 text-xs text-amber-100/70">
+          Apostas ficam bloqueadas até a próxima fase BETTING.
+        </p>
+      </section>
+    );
+  }
+
+  if (status === "CRASHED" || status === "SETTLED") {
+    return (
+      <section className="rounded-lg border border-rose-400/25 bg-rose-500/10 px-4 py-3">
+        <p className="text-sm font-semibold text-rose-100">
+          Crash revelado. Aguarde a próxima rodada para apostar.
+        </p>
+      </section>
+    );
+  }
+
+  return null;
 }
 
 function PlayerPanel({
@@ -354,13 +482,13 @@ function RoundProgress({
         : 0;
 
   return (
-    <section className="rounded-lg border border-zinc-800 bg-zinc-950/80 p-4">
+    <section className={cn("rounded-lg border bg-zinc-950/80 p-4", getRoundStatusPanelClassName(round?.status))}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
             Estado da rodada
           </p>
-          <strong className="mt-1 block text-lg text-zinc-100">
+          <strong className={cn("mt-1 block text-lg", getRoundStatusTextClassName(round?.status))}>
             {getRoundStatusLabel(round?.status)}
           </strong>
         </div>
@@ -379,6 +507,20 @@ function RoundProgress({
       </div>
     </section>
   );
+}
+
+function getRoundStatusPanelClassName(status?: string) {
+  if (status === "BETTING") return "border-emerald-400/30";
+  if (status === "RUNNING") return "border-amber-300/30";
+  if (status === "CRASHED" || status === "SETTLED") return "border-rose-400/30";
+  return "border-zinc-800";
+}
+
+function getRoundStatusTextClassName(status?: string) {
+  if (status === "BETTING") return "text-emerald-200";
+  if (status === "RUNNING") return "text-amber-100";
+  if (status === "CRASHED" || status === "SETTLED") return "text-rose-100";
+  return "text-zinc-100";
 }
 
 function SeedPanel({

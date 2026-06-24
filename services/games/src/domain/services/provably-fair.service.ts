@@ -15,6 +15,7 @@ export type ProvablyFairVerificationInput = ProvablyFairInput & {
 const SERVER_SEED_BYTES = 32;
 const HMAC_HEX_CHARS_USED = 13;
 const HOUSE_EDGE = 0.01;
+const MAX_CRASH_MULTIPLIER_BPS = Number(process.env.GAMES_MAX_CRASH_MULTIPLIER_BPS ?? 500);
 
 @Injectable()
 export class ProvablyFairService {
@@ -41,7 +42,7 @@ export class ProvablyFairService {
     const roll = sample / maxSample;
     const multiplier = Math.max(1, (1 - HOUSE_EDGE) / Math.max(roll, Number.EPSILON));
 
-    return Math.max(100, Math.floor(multiplier * 100));
+    return Math.min(MAX_CRASH_MULTIPLIER_BPS, Math.max(100, Math.floor(multiplier * 100)));
   }
 
   verifyCrashPoint(input: ProvablyFairVerificationInput): boolean {

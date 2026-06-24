@@ -58,7 +58,7 @@ describe("AutomaticRoundEngineService", () => {
       ...originalEnv,
       GAMES_ENGINE_ENABLED: "false",
       GAMES_BETTING_WINDOW_MS: "10000",
-      GAMES_SETTLEMENT_DELAY_MS: "2000",
+      GAMES_SETTLEMENT_DELAY_MS: "5000",
     };
   });
 

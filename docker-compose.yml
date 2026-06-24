@@ -107,9 +107,10 @@ services:
       DATABASE_URL: "postgresql://admin:admin@postgres:5432/games"
       RABBITMQ_URL: "amqp://admin:admin@rabbitmq:5672"
       GAMES_ENGINE_ENABLED: "true"
-      GAMES_ENGINE_TICK_INTERVAL_MS: "500"
+      GAMES_ENGINE_TICK_INTERVAL_MS: "250"
       GAMES_BETTING_WINDOW_MS: "10000"
-      GAMES_SETTLEMENT_DELAY_MS: "2000"
+      GAMES_SETTLEMENT_DELAY_MS: "5000"
+      GAMES_MAX_CRASH_MULTIPLIER_BPS: "500"
       CORS_ORIGIN: "http://localhost:3000"
       KEYCLOAK_ISSUER_URL: "http://localhost:8080/realms/crash-game"
       KEYCLOAK_JWKS_URL: "http://keycloak:8080/realms/crash-game/protocol/openid-connect/certs"
@@ -178,6 +179,7 @@ services:
       NEXT_PUBLIC_API_BASE_URL: "http://localhost:8000"
       NEXT_PUBLIC_WS_BASE_URL: "http://localhost:8000"
       NEXT_PUBLIC_BETTING_WINDOW_MS: "10000"
+      NEXT_PUBLIC_MAX_CRASH_MULTIPLIER_BPS: "500"
       NEXT_PUBLIC_DEMO_WALLET_CREDIT_ENABLED: "true"
     depends_on:
       kong:

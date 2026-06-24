@@ -16,7 +16,10 @@ export function formatCents(value: string | number | bigint | undefined) {
 }
 
 export function formatMultiplier(multiplierBps?: number) {
-  return `${((multiplierBps ?? 10000) / 10000).toFixed(2)}x`;
+  const maxMultiplierBps = Number(process.env.NEXT_PUBLIC_MAX_CRASH_MULTIPLIER_BPS ?? 500);
+  const safeMultiplierBps = Math.min(multiplierBps ?? 100, maxMultiplierBps);
+
+  return `${(safeMultiplierBps / 100).toFixed(2)}x`;
 }
 
 export function centsFromDecimalString(value: string) {

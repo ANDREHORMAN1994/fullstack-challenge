@@ -21,7 +21,7 @@ export const getAutomaticRoundEngineConfig = (): AutomaticRoundEngineConfig => (
   enabled: process.env.GAMES_ENGINE_ENABLED === "true",
   tickIntervalMs: Number(process.env.GAMES_ENGINE_TICK_INTERVAL_MS ?? 500),
   bettingWindowMs: Number(process.env.GAMES_BETTING_WINDOW_MS ?? 10_000),
-  settlementDelayMs: Number(process.env.GAMES_SETTLEMENT_DELAY_MS ?? 2_000),
+  settlementDelayMs: Number(process.env.GAMES_SETTLEMENT_DELAY_MS ?? 5_000),
 });
 
 @Injectable()
@@ -104,6 +104,10 @@ export class AutomaticRoundEngineService implements OnModuleInit, OnModuleDestro
       }
 
       const multiplierBps = calculateCurrentMultiplierBps(runningStartedAt, now);
+      const effectiveCrashMultiplierBps = Math.min(
+        currentRound.crashMultiplierBps,
+        Number(process.env.GAMES_MAX_CRASH_MULTIPLIER_BPS ?? 500),
+      );
 
       this.gameEventsPublisher.publish({
         name: "round.multiplier",
@@ -113,7 +117,7 @@ export class AutomaticRoundEngineService implements OnModuleInit, OnModuleDestro
         },
       });
 
-      if (multiplierBps >= currentRound.crashMultiplierBps) {
+      if (multiplierBps >= effectiveCrashMultiplierBps) {
         await this.crashCurrentRoundUseCase.execute(now);
       }
 
