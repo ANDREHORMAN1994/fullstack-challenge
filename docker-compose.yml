@@ -51,6 +51,7 @@ services:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_HEALTH_ENABLED: "true"
+      KC_HOSTNAME: "http://localhost:8080"
     volumes:
       - ./docker/keycloak:/opt/keycloak/data/import:ro
     healthcheck:
@@ -171,11 +172,13 @@ services:
       NEXTAUTH_URL: "http://localhost:3000"
       NEXTAUTH_SECRET: "local-development-secret-change-me"
       KEYCLOAK_ISSUER: "http://localhost:8080/realms/crash-game"
+      KEYCLOAK_INTERNAL_ISSUER: "http://keycloak:8080/realms/crash-game"
       KEYCLOAK_CLIENT_ID: "crash-game-client"
       KEYCLOAK_CLIENT_SECRET: ""
       NEXT_PUBLIC_API_BASE_URL: "http://localhost:8000"
       NEXT_PUBLIC_WS_BASE_URL: "http://localhost:8000"
       NEXT_PUBLIC_BETTING_WINDOW_MS: "10000"
+      NEXT_PUBLIC_DEMO_WALLET_CREDIT_ENABLED: "true"
     depends_on:
       kong:
         condition: service_healthy

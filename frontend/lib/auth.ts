@@ -1,24 +1,41 @@
 import type { AuthOptions } from "next-auth";
-import KeycloakProvider from "next-auth/providers/keycloak";
 
-const issuer = process.env.KEYCLOAK_ISSUER ?? "http://localhost:8080/realms/crash-game";
+const publicIssuer = process.env.KEYCLOAK_ISSUER ?? "http://localhost:8080/realms/crash-game";
+const internalIssuer = process.env.KEYCLOAK_INTERNAL_ISSUER ?? publicIssuer;
+const clientId = process.env.KEYCLOAK_CLIENT_ID ?? "crash-game-client";
+const clientSecret = process.env.KEYCLOAK_CLIENT_SECRET ?? "";
 
 export const authOptions: AuthOptions = {
   session: {
     strategy: "jwt",
   },
   providers: [
-    KeycloakProvider({
-      clientId: process.env.KEYCLOAK_CLIENT_ID ?? "crash-game-client",
-      clientSecret: process.env.KEYCLOAK_CLIENT_SECRET ?? "",
-      issuer,
+    {
+      id: "keycloak",
+      name: "Keycloak",
+      type: "oauth",
+      clientId,
+      clientSecret,
+      issuer: publicIssuer,
       authorization: {
+        url: `${publicIssuer}/protocol/openid-connect/auth`,
         params: {
           scope: "openid profile email",
           code_challenge_method: "S256",
         },
       },
-    }),
+      token: `${internalIssuer}/protocol/openid-connect/token`,
+      userinfo: `${internalIssuer}/protocol/openid-connect/userinfo`,
+      jwks_endpoint: `${internalIssuer}/protocol/openid-connect/certs`,
+      checks: ["pkce", "state"],
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name ?? profile.preferred_username,
+          email: profile.email,
+        };
+      },
+    },
   ],
   callbacks: {
     async jwt({ token, account, profile }) {

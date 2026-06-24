@@ -56,6 +56,10 @@ Carteiras novas no ambiente Docker de avaliação recebem saldo demo real de `10
 centavos (`R$ 1.000,00`). Esse seed é feito pelo Wallet Service somente quando
 `WALLETS_DEMO_INITIAL_CREDIT_ENABLED=true`; desative essa flag fora do fluxo demo.
 
+No Docker, o login OIDC usa `http://localhost:8080` no navegador e
+`http://keycloak:8080` internamente entre containers. Isso evita passos manuais de
+DNS/hosts e mantém o fluxo de avaliação em `http://localhost:3000`.
+
 ### Fluxo manual de avaliação
 
 1. Acesse `http://localhost:3000`.
