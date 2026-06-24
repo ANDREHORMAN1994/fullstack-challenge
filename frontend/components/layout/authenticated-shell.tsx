@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { BarChart3, Clock3, Gamepad2, History, LayoutDashboard, LogOut, Menu, Wallet } from "lucide-react";
+import { BarChart3, Gamepad2, History, LogOut, Menu, Wallet } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useCurrentPlayer } from "@/features/player/use-current-player";
@@ -13,7 +13,6 @@ import { WalletRequiredNotice } from "@/features/wallet/wallet-required-notice";
 import { cn, formatCents, shortId } from "@/lib/utils";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/game", label: "Game", icon: Gamepad2 },
   { href: "/wallet", label: "Wallet", icon: Wallet },
   { href: "/my-bets", label: "My Bets", icon: BarChart3 },
@@ -29,7 +28,7 @@ export function AuthenticatedShell({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen bg-black/10 text-zinc-100 lg:pl-64">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-zinc-800 bg-zinc-950/95 px-4 py-5 shadow-2xl shadow-black/40 lg:flex lg:flex-col">
-        <Link href="/dashboard" className="flex items-center gap-3 rounded-md px-2 py-2">
+        <Link href="/game" className="flex items-center gap-3 rounded-md px-2 py-2">
           <span className="flex h-10 w-10 items-center justify-center rounded-md bg-emerald-400 text-black">
             <Gamepad2 size={22} />
           </span>
@@ -62,11 +61,20 @@ export function AuthenticatedShell({ children }: { children: React.ReactNode }) 
 
         <div className="mt-auto space-y-3 border-t border-zinc-800 pt-4">
           <div className="rounded-md bg-black/30 p-3">
-            <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Player</p>
-            <strong className="mt-1 block truncate text-sm text-zinc-100">{player.username ?? shortId(player.playerId)}</strong>
-            {wallet ? <span className="mt-1 block text-xs text-emerald-300">{formatCents(wallet.balanceCents)}</span> : null}
+            <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">
+              {player.username ?? shortId(player.playerId)}
+            </p>
+            {wallet ? (
+              <span className="mt-1 block text-xs text-emerald-300">
+                {formatCents(wallet.balanceCents)}
+              </span>
+            ) : null}
           </div>
-          <Button className="w-full justify-start" variant="ghost" onClick={() => signOut({ callbackUrl: "/login" })}>
+          <Button
+            className="w-full justify-start"
+            variant="ghost"
+            onClick={() => signOut({ callbackUrl: "/login" })}
+          >
             <LogOut size={18} />
             Logout
           </Button>
@@ -75,7 +83,7 @@ export function AuthenticatedShell({ children }: { children: React.ReactNode }) 
 
       <header className="sticky top-0 z-20 border-b border-zinc-800 bg-zinc-950/90 px-4 py-3 backdrop-blur lg:hidden">
         <div className="flex items-center justify-between gap-3">
-          <Link href="/dashboard" className="inline-flex items-center gap-2 font-semibold text-zinc-50">
+          <Link href="/game" className="inline-flex items-center gap-2 font-semibold text-zinc-50">
             <Gamepad2 size={20} className="text-emerald-300" />
             Crash Game
           </Link>
@@ -103,7 +111,7 @@ export function AuthenticatedShell({ children }: { children: React.ReactNode }) 
         </nav>
       </header>
 
-      <main className="min-h-screen px-4 py-4 lg:px-6 lg:py-6">
+      <main className="min-h-screen px-4 py-4 lg:px-6 lg:py-6 flex flex-col items-center">
         {onboarding.walletRequired ? (
           <div className="mx-auto mb-4 max-w-7xl">
             <WalletRequiredNotice />
@@ -118,13 +126,6 @@ export function AuthenticatedShell({ children }: { children: React.ReactNode }) 
         onCreateWallet={onboarding.createWallet}
         onDismiss={onboarding.dismiss}
       />
-
-      <div className="fixed bottom-4 right-4 z-20 lg:hidden">
-        <Button variant="secondary" onClick={() => signOut({ callbackUrl: "/login" })}>
-          <LogOut size={18} />
-          Logout
-        </Button>
-      </div>
     </div>
   );
 }

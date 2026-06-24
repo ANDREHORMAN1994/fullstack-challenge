@@ -2,18 +2,29 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { CheckCircle2, Clock3, LogIn, LogOut, Shield, Wallet as WalletIcon, XCircle } from "lucide-react";
+import {
+  Check,
+  CheckCircle2,
+  Clock3,
+  Copy,
+  LogIn,
+  LogOut,
+  Shield,
+  Wallet as WalletIcon,
+  XCircle,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BetControls } from "@/components/game/bet-controls";
 import { CrashChart } from "@/components/game/crash-chart";
 import { Button } from "@/components/ui/button";
-import { getBetStatusClassName, getBetStatusLabel, getCrashPointClassName, getRoundStatusLabel } from "@/features/game/game-formatters";
+import { getBetStatusLabel, getRoundStatusLabel } from "@/features/game/game-formatters";
 import { useWallet } from "@/features/wallet/use-wallet";
 import { Bet, crashApi, Round, RoundVerification } from "@/lib/api";
 import { verifyCrashRound } from "@/lib/provably-fair";
 import { createGameSocket, realtimeEvents } from "@/lib/realtime";
 import { cn, formatCents, formatMultiplier, shortId } from "@/lib/utils";
+import { MyBets } from "@/features/bets/components/my-bets-summary";
 
 type LiveBet = Bet & {
   status: "PLACED" | "CASHED_OUT" | "LOST";
@@ -40,11 +51,6 @@ export function GameDashboard() {
   });
 
   const wallet = useWallet(token);
-
-  const historyQuery = useQuery({
-    queryKey: ["round-history"],
-    queryFn: () => crashApi.getRoundHistory(),
-  });
 
   const myBetsQuery = useQuery({
     queryKey: ["my-bets", token],
@@ -94,7 +100,15 @@ export function GameDashboard() {
         }
 
         if (eventName === "round.started") {
-          setRound((previous) => (previous ? { ...previous, status: "RUNNING", runningStartedAt: String(payload.runningStartedAt) } : previous));
+          setRound((previous) =>
+            previous
+              ? {
+                  ...previous,
+                  status: "RUNNING",
+                  runningStartedAt: String(payload.runningStartedAt),
+                }
+              : previous,
+          );
           setMultiplierBps(10000);
         }
 
@@ -103,7 +117,9 @@ export function GameDashboard() {
         }
 
         if (eventName === "round.crashed") {
-          toast.error("Round crashed", { description: formatMultiplier(Number(payload.crashMultiplierBps)) });
+          toast.error("Round crashed", {
+            description: formatMultiplier(Number(payload.crashMultiplierBps)),
+          });
           setRound((previous) =>
             previous
               ? {
@@ -116,8 +132,11 @@ export function GameDashboard() {
           );
           setMultiplierBps(Number(payload.crashMultiplierBps));
           setLiveBets((bets) => {
-            const playerLost = bets.some((bet) => bet.playerId === playerId && bet.status === "PLACED");
-            if (playerLost) toast.error("Aposta perdida", { description: "O crash chegou antes do cashout." });
+            const playerLost = bets.some(
+              (bet) => bet.playerId === playerId && bet.status === "PLACED",
+            );
+            if (playerLost)
+              toast.error("Aposta perdida", { description: "O crash chegou antes do cashout." });
             return bets.map((bet) => (bet.status === "PLACED" ? { ...bet, status: "LOST" } : bet));
           });
           void queryClient.invalidateQueries({ queryKey: ["round-history"] });
@@ -127,7 +146,10 @@ export function GameDashboard() {
 
         if (eventName === "bet.placed") {
           const bet = payload as LiveBet;
-          setLiveBets((bets) => [{ ...bet, status: "PLACED" }, ...bets.filter((item) => item.betId !== bet.betId)]);
+          setLiveBets((bets) => [
+            { ...bet, status: "PLACED" },
+            ...bets.filter((item) => item.betId !== bet.betId),
+          ]);
         }
 
         if (eventName === "bet.cashed_out") {
@@ -190,15 +212,17 @@ export function GameDashboard() {
       : 0;
 
   return (
-    <main className="mx-auto grid w-full max-w-7xl gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <section className="space-y-4">
+    <main className="flex-1 grid w-full min-h-0 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="space-y-4 min-h-0 flex-1 h-full flex flex-col">
         <header className="flex flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-950/70 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">Crash Game</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">
+              Crash Game
+            </p>
             <h1 className="mt-1 text-2xl font-black text-zinc-50">Rodada em tempo real</h1>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-sm text-zinc-300">
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="inline-flex items-center gap-2 rounded-md text-sm text-zinc-300">
               <Shield size={16} className={connected ? "text-emerald-300" : "text-rose-300"} />
               {connected ? "Socket online" : "Socket offline"}
             </span>
@@ -223,13 +247,10 @@ export function GameDashboard() {
         />
         <RoundProgress round={round} bettingRemainingMs={bettingRemainingMs} />
 
-        <section className="grid gap-4 lg:grid-cols-[1fr_300px]">
-          <LiveBets bets={liveBets} />
-          <RoundHistory rounds={historyQuery.data?.items ?? []} />
-        </section>
+        <LiveBets bets={liveBets} />
       </section>
 
-      <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+      <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start min-h-0 flex-1 h-full flex flex-col">
         <PlayerPanel
           username={username}
           isAuthenticated={authStatus === "authenticated"}
@@ -289,17 +310,25 @@ function PlayerPanel({
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">Jogador</p>
       <div className="mt-3 flex items-center justify-between gap-3">
         <div>
-          <strong className="block text-lg text-zinc-50">{isAuthenticated ? username : "Não autenticado"}</strong>
-          <span className="text-sm text-zinc-500">{isAuthenticated ? "JWT Keycloak ativo" : "Entre para apostar"}</span>
+          <strong className="block text-lg text-zinc-50">
+            {isAuthenticated ? username : "Não autenticado"}
+          </strong>
         </div>
         <WalletIcon className="text-emerald-300" size={28} />
       </div>
       <div className="mt-4 rounded-md bg-black/35 p-3">
         <p className="text-xs text-zinc-500">Saldo</p>
-        <strong className="mt-1 block text-3xl text-zinc-50">{balanceCents ? formatCents(balanceCents) : "Indisponível"}</strong>
+        <strong className="mt-1 block text-3xl text-zinc-50">
+          {balanceCents ? formatCents(balanceCents) : "Indisponível"}
+        </strong>
       </div>
       {walletMissing ? (
-        <Button className="mt-3 w-full" variant="secondary" onClick={onCreateWallet} disabled={creatingWallet}>
+        <Button
+          className="mt-3 w-full"
+          variant="secondary"
+          onClick={onCreateWallet}
+          disabled={creatingWallet}
+        >
           Criar carteira
         </Button>
       ) : null}
@@ -316,7 +345,10 @@ function RoundProgress({
 }) {
   const progress =
     round?.status === "BETTING"
-      ? Math.min(100, Math.max(0, ((BETTING_WINDOW_MS - bettingRemainingMs) / BETTING_WINDOW_MS) * 100))
+      ? Math.min(
+          100,
+          Math.max(0, ((BETTING_WINDOW_MS - bettingRemainingMs) / BETTING_WINDOW_MS) * 100),
+        )
       : round?.status === "RUNNING"
         ? 100
         : 0;
@@ -325,18 +357,25 @@ function RoundProgress({
     <section className="rounded-lg border border-zinc-800 bg-zinc-950/80 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">Estado da rodada</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+            Estado da rodada
+          </p>
           <strong className="mt-1 block text-lg text-zinc-100">
             {getRoundStatusLabel(round?.status)}
           </strong>
         </div>
         <div className="inline-flex items-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-sm text-zinc-300">
           <Clock3 size={16} className="text-cyan-300" />
-          {round?.status === "BETTING" ? `${Math.ceil(bettingRemainingMs / 1000)}s para apostar` : shortId(round?.roundId, 6)}
+          {round?.status === "BETTING"
+            ? `${Math.ceil(bettingRemainingMs / 1000)}s para apostar`
+            : shortId(round?.roundId, 6)}
         </div>
       </div>
       <div className="mt-4 h-2 overflow-hidden rounded-full bg-zinc-900">
-        <div className="h-full rounded-full bg-emerald-400 transition-[width] duration-200" style={{ width: `${progress}%` }} />
+        <div
+          className="h-full rounded-full bg-emerald-400 transition-[width] duration-200"
+          style={{ width: `${progress}%` }}
+        />
       </div>
     </section>
   );
@@ -349,7 +388,22 @@ function SeedPanel({
   round: Round | null;
   verification?: RoundVerification;
 }) {
-  const [localCheck, setLocalCheck] = useState<Awaited<ReturnType<typeof verifyCrashRound>> | null>(null);
+  const [localCheck, setLocalCheck] = useState<Awaited<ReturnType<typeof verifyCrashRound>> | null>(
+    null,
+  );
+  const [copied, setCopied] = useState(false);
+  const [copiedText, setCopiedText] = useState("");
+
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setCopiedText(text);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (err) {
+      console.error("Falha ao copiar:", err);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -379,9 +433,17 @@ function SeedPanel({
   return (
     <section className="rounded-lg border border-zinc-800 bg-zinc-950/80 p-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">Provably fair</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+          Provably fair
+        </p>
         {verification ? (
-          <span className={verified ? "inline-flex items-center gap-1 text-xs font-semibold text-emerald-300" : "inline-flex items-center gap-1 text-xs font-semibold text-rose-300"}>
+          <span
+            className={
+              verified
+                ? "inline-flex items-center gap-1 text-xs font-semibold text-emerald-300"
+                : "inline-flex items-center gap-1 text-xs font-semibold text-rose-300"
+            }
+          >
             {verified ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
             {verified ? "Verificado" : "Divergente"}
           </span>
@@ -390,22 +452,86 @@ function SeedPanel({
       <dl className="mt-3 space-y-3 text-sm">
         <div>
           <dt className="text-zinc-500">Hash antes da rodada</dt>
-          <dd className="break-all font-mono text-xs text-emerald-200">{round?.serverSeedHash ?? "-"}</dd>
+          <div className="flex items-center justify-between">
+            <dd className="break-all font-mono text-xs text-emerald-200 truncate">
+              {round?.serverSeedHash ?? "-"}
+            </dd>
+            <button
+              type="button"
+              onClick={() => handleCopy(round?.serverSeedHash ?? "")}
+              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition-colors"
+              title="Copiar ID da rodada"
+            >
+              {copied && copiedText === round?.serverSeedHash ? (
+                <Check size={14} className="text-emerald-400" />
+              ) : (
+                <Copy size={14} />
+              )}
+            </button>
+          </div>
         </div>
         {verification ? (
           <div>
             <dt className="text-zinc-500">Server seed revelada</dt>
-            <dd className="break-all font-mono text-xs text-zinc-300">{verification.serverSeed}</dd>
+            <div className="flex items-center justify-between">
+              <dd className="break-all font-mono text-xs text-zinc-300 truncate">
+                {verification.serverSeed}
+              </dd>
+              <button
+                type="button"
+                onClick={() => handleCopy(verification.serverSeed)}
+                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition-colors"
+                title="Copiar ID da rodada"
+              >
+                {copied && copiedText === verification.serverSeed ? (
+                  <Check size={14} className="text-emerald-400" />
+                ) : (
+                  <Copy size={14} />
+                )}
+              </button>
+            </div>
           </div>
         ) : null}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <dt className="text-zinc-500">Client seed</dt>
-            <dd className="font-mono text-xs text-zinc-300">{verification?.clientSeed ?? round?.clientSeed ?? "-"}</dd>
+            <div className="flex items-center justify-between">
+              <dd className="font-mono text-xs text-zinc-300 truncate">
+                {verification?.clientSeed ?? round?.clientSeed ?? "-"}
+              </dd>
+              <button
+                type="button"
+                onClick={() => handleCopy(verification?.clientSeed ?? round?.clientSeed ?? "")}
+                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition-colors"
+                title="Copiar ID da rodada"
+              >
+                {copied && copiedText === (verification?.clientSeed ?? round?.clientSeed) ? (
+                  <Check size={14} className="text-emerald-400" />
+                ) : (
+                  <Copy size={14} />
+                )}
+              </button>
+            </div>
           </div>
           <div>
             <dt className="text-zinc-500">Nonce</dt>
-            <dd className="font-mono text-xs text-zinc-300">{verification?.nonce ?? round?.nonce ?? "-"}</dd>
+            <div className="flex items-center justify-between">
+              <dd className="font-mono text-xs text-zinc-300 truncate">
+                {verification?.nonce ?? round?.nonce ?? "-"}
+              </dd>
+              <button
+                type="button"
+                onClick={() => handleCopy(String(verification?.nonce ?? round?.nonce ?? ""))}
+                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition-colors"
+                title="Copiar ID da rodada"
+              >
+                {copied && copiedText === String(verification?.nonce ?? round?.nonce) ? (
+                  <Check size={14} className="text-emerald-400" />
+                ) : (
+                  <Copy size={14} />
+                )}
+              </button>
+            </div>
           </div>
         </div>
         {verification ? (
@@ -427,62 +553,39 @@ function SeedPanel({
 
 function LiveBets({ bets }: { bets: LiveBet[] }) {
   return (
-    <section className="rounded-lg border border-zinc-800 bg-zinc-950/80 p-4">
+    <section className="flex-1 h-full rounded-lg border border-zinc-800 bg-zinc-950/80 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-400">Apostas da rodada</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-400">
+          Apostas da rodada
+        </h2>
         <span className="text-xs text-zinc-500">{bets.length} jogadores</span>
       </div>
-      <div className="max-h-72 space-y-2 overflow-auto pr-1">
-        {bets.length === 0 ? <p className="py-8 text-center text-sm text-zinc-500">Aguardando apostas...</p> : null}
+      <div className="h-full min-h-0 flex flex-col justify-center space-y-2 overflow-auto">
+        {bets.length === 0 ? (
+          <p className="py-8 text-center text-sm text-zinc-500">Aguardando apostas...</p>
+        ) : null}
         {bets.map((bet) => (
-          <div key={bet.betId} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 rounded-md bg-zinc-900/70 px-3 py-2 text-sm">
+          <div
+            key={bet.betId}
+            className="grid grid-cols-[1fr_auto_auto] items-center gap-3 rounded-md bg-zinc-900/70 px-3 py-2 text-sm"
+          >
             <span className="font-mono text-zinc-300">{shortId(bet.playerId, 5)}</span>
             <span className="text-zinc-100">{formatCents(bet.amountCents)}</span>
-            <span className={bet.status === "CASHED_OUT" ? "text-emerald-300" : bet.status === "LOST" ? "text-rose-300" : "text-zinc-400"}>
-              {bet.status === "CASHED_OUT" ? formatMultiplier(bet.cashoutMultiplierBps) : getBetStatusLabel(bet.status)}
-            </span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function RoundHistory({ rounds }: { rounds: Round[] }) {
-  return (
-    <section className="rounded-lg border border-zinc-800 bg-zinc-950/80 p-4">
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-zinc-400">Histórico</h2>
-      <div className="grid grid-cols-3 gap-2">
-        {rounds.slice(0, 18).map((item) => {
-          return (
             <span
-              key={item.roundId}
-              className={cn("rounded-md px-2 py-2 text-center text-sm font-bold", getCrashPointClassName(item.crashMultiplierBps))}
+              className={
+                bet.status === "CASHED_OUT"
+                  ? "text-emerald-300"
+                  : bet.status === "LOST"
+                    ? "text-rose-300"
+                    : "text-zinc-400"
+              }
             >
-              {formatMultiplier(item.crashMultiplierBps)}
-            </span>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function MyBets({ bets }: { bets: Bet[] }) {
-  return (
-    <section className="rounded-lg border border-zinc-800 bg-zinc-950/80 p-4">
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-zinc-400">Minhas últimas apostas</h2>
-      <div className="space-y-2">
-        {bets.slice(0, 5).map((bet) => (
-          <div key={bet.betId} className="flex items-center justify-between rounded-md bg-black/30 px-3 py-2 text-sm">
-            <span className="font-mono text-xs text-zinc-500">{shortId(bet.roundId, 5)}</span>
-            <span className="text-zinc-200">{formatCents(bet.amountCents)}</span>
-            <span className={cn("rounded-md px-2 py-1 text-xs font-semibold", getBetStatusClassName(bet.status))}>
-              {getBetStatusLabel(bet.status)}
+              {bet.status === "CASHED_OUT"
+                ? formatMultiplier(bet.cashoutMultiplierBps)
+                : getBetStatusLabel(bet.status)}
             </span>
           </div>
         ))}
-        {bets.length === 0 ? <p className="py-4 text-center text-sm text-zinc-500">Sem apostas ainda</p> : null}
       </div>
     </section>
   );

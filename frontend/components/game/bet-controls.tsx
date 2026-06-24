@@ -125,7 +125,7 @@ export function BetControls({
         disabled={status !== "RUNNING" || !hasPendingBet || cashingOut}
       >
         {cashingOut ? <Loader2 size={18} className="animate-spin" /> : <HandCoins size={18} />}
-        Cash Out
+        Sacar
       </Button>
     </section>
   );

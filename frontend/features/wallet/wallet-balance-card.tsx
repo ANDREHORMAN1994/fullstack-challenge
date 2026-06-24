@@ -2,14 +2,26 @@ import { Wallet as WalletIcon } from "lucide-react";
 import type { Wallet } from "@/lib/api";
 import { formatCents } from "@/lib/formatters/money";
 
-export function WalletBalanceCard({ wallet }: { wallet?: Wallet }) {
+export function WalletBalanceCard({
+  wallet,
+  className,
+  showIcon = true,
+}: {
+  wallet?: Wallet;
+  className?: string;
+  showIcon?: boolean;
+}) {
   return (
-    <article className="rounded-lg border border-zinc-800 bg-black/30 p-4">
+    <article className={`rounded-lg border border-zinc-800 bg-black/30 p-4 ${className}`}>
       <div className="mb-4 flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">Saldo real</p>
-        <WalletIcon size={20} className="text-emerald-300" />
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+          Saldo real
+        </p>
+        {showIcon && <WalletIcon size={20} className="text-emerald-300" />}
       </div>
-      <strong className="block text-4xl text-zinc-50">{wallet ? formatCents(wallet.balanceCents) : "Indisponível"}</strong>
+      <strong className="block text-4xl text-zinc-50">
+        {wallet ? formatCents(wallet.balanceCents) : "Indisponível"}
+      </strong>
       {wallet ? <span className="mt-2 block text-sm text-zinc-500">{wallet.currency}</span> : null}
     </article>
   );

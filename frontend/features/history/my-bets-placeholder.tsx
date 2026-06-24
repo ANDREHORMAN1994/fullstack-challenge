@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 import { formatCents, formatMultiplier, shortId } from "@/lib/formatters/money";
 
 const PAGE_SIZE = 10;
+const tableGridClass =
+  "md:grid-cols-[minmax(180px,1.5fr)_minmax(96px,0.7fr)_minmax(96px,0.7fr)_minmax(124px,0.8fr)_minmax(112px,0.8fr)_minmax(156px,1fr)]";
 
 export function MyBetsPlaceholder() {
   const player = useCurrentPlayer();
@@ -19,7 +21,7 @@ export function MyBetsPlaceholder() {
   const pagination = betsQuery.data?.pagination;
 
   return (
-    <section className="mx-auto max-w-6xl rounded-lg border border-zinc-800 bg-zinc-950/80 p-5">
+    <section className="flex-1 w-full max-w-6xl rounded-lg border border-zinc-800 bg-zinc-950/80 p-5">
       <div className="mb-5 flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">My Bets</p>
@@ -29,14 +31,14 @@ export function MyBetsPlaceholder() {
         <BarChart3 size={28} className="text-emerald-300" />
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-zinc-800">
-        <div className="hidden grid-cols-[1.2fr_auto_auto_auto_auto_auto] gap-3 border-b border-zinc-800 bg-black/35 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500 md:grid">
+      <div className="overflow-x-auto rounded-lg border border-zinc-800">
+        <div className={cn("hidden min-w-220 gap-4 border-b border-zinc-800 bg-black/35 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500 md:grid", tableGridClass)}>
           <span>Round</span>
-          <span>Valor</span>
+          <span className="text-right">Valor</span>
           <span>Status</span>
           <span>Multiplicador</span>
-          <span>Pagamento</span>
-          <span>Data</span>
+          <span className="text-right">Pagamento</span>
+          <span className="text-right">Data</span>
         </div>
 
         {betsQuery.isLoading ? (
@@ -64,22 +66,24 @@ export function MyBetsPlaceholder() {
           {bets.map((bet) => (
             <div
               key={bet.betId}
-              className="grid gap-2 px-4 py-4 text-sm md:grid-cols-[1.2fr_auto_auto_auto_auto_auto] md:items-center"
+              className={cn("grid min-w-220 gap-4 px-4 py-4 text-sm md:grid md:items-center", tableGridClass)}
             >
-              <span className="font-mono text-xs text-zinc-500">{shortId(bet.roundId)}</span>
-              <span className="text-zinc-100">{formatCents(bet.amountCents)}</span>
+              <span className="min-w-0 truncate font-mono text-xs text-zinc-500" title={bet.roundId}>
+                {shortId(bet.roundId)}
+              </span>
+              <span className="text-right text-zinc-100">{formatCents(bet.amountCents)}</span>
               <span className={cn("w-fit rounded-md px-2 py-1 text-xs font-semibold", getBetStatusClassName(bet.status))}>
                 {getBetStatusLabel(bet.status)}
               </span>
               <span className="text-zinc-300">{bet.cashoutMultiplierBps ? formatMultiplier(bet.cashoutMultiplierBps) : "-"}</span>
-              <span className="text-zinc-300">{bet.payoutCents ? formatCents(bet.payoutCents) : "-"}</span>
-              <span className="text-xs text-zinc-500">{bet.createdAt ? new Date(bet.createdAt).toLocaleString("pt-BR") : "-"}</span>
+              <span className="text-right text-zinc-300">{bet.payoutCents ? formatCents(bet.payoutCents) : "-"}</span>
+              <span className="whitespace-nowrap text-right text-xs text-zinc-500">{bet.createdAt ? new Date(bet.createdAt).toLocaleString("pt-BR") : "-"}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3">
+      <div className="sticky top-full flex items-center justify-between gap-3">
         <span className="text-sm text-zinc-500">Página {pagination?.page ?? page}</span>
         <div className="flex gap-2">
           <Button variant="secondary" disabled={page <= 1 || betsQuery.isFetching} onClick={() => setPage((current) => Math.max(1, current - 1))}>

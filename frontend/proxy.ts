@@ -1,7 +1,7 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
-const protectedRoutes = ["/dashboard", "/game", "/wallet", "/my-bets", "/history"];
+const protectedRoutes = ["/game", "/wallet", "/my-bets", "/history"];
 
 export default withAuth(
   function middleware(request) {
@@ -13,11 +13,11 @@ export default withAuth(
     }
 
     if (pathname === "/" && isAuthenticated) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return NextResponse.redirect(new URL("/game", request.url));
     }
 
     if (pathname === "/login" && isAuthenticated) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return NextResponse.redirect(new URL("/game", request.url));
     }
 
     return NextResponse.next();
@@ -40,5 +40,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/", "/login", "/dashboard/:path*", "/game/:path*", "/wallet/:path*", "/my-bets/:path*", "/history/:path*"],
+  matcher: ["/", "/login", "/game/:path*", "/wallet/:path*", "/my-bets/:path*", "/history/:path*"],
 };

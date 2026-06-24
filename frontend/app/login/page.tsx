@@ -15,7 +15,7 @@ export default function LoginPage() {
   }, []);
 
   if (status === "authenticated") {
-    redirect("/dashboard");
+    redirect("/game");
   }
 
   return (
@@ -59,8 +59,8 @@ export default function LoginPage() {
             </p>
             <h2 className="mt-2 text-3xl font-black text-zinc-50">Entrar no jogo</h2>
             <p className="mt-3 text-sm leading-6 text-zinc-400">
-              Use o Keycloak local para receber seu JWT e acessar dashboard, carteira, apostas e a
-              mesa em tempo real.
+              Use o Keycloak local para receber seu JWT e acessar a mesa, carteira, apostas e
+              histórico em tempo real.
             </p>
 
             <div className="mt-5 rounded-md border border-zinc-800 bg-zinc-950/80 p-4">
@@ -80,7 +80,7 @@ export default function LoginPage() {
               className="mt-6 w-full"
               onClick={() => {
                 setIsRedirecting(true);
-                void signIn("keycloak", { callbackUrl: "/dashboard" });
+                void signIn("keycloak", { callbackUrl: "/game" });
               }}
               disabled={isRedirecting}
             >
