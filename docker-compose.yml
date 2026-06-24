@@ -108,6 +108,7 @@ services:
       GAMES_ENGINE_TICK_INTERVAL_MS: "500"
       GAMES_BETTING_WINDOW_MS: "10000"
       GAMES_SETTLEMENT_DELAY_MS: "2000"
+      CORS_ORIGIN: "http://localhost:3000"
       KEYCLOAK_ISSUER_URL: "http://localhost:8080/realms/crash-game"
       KEYCLOAK_JWKS_URL: "http://keycloak:8080/realms/crash-game/protocol/openid-connect/certs"
       KEYCLOAK_AUDIENCE: "crash-game-client"
@@ -137,6 +138,7 @@ services:
     env_file:
       - ./services/wallets/.env
     environment:
+      CORS_ORIGIN: "http://localhost:3000"
       KEYCLOAK_ISSUER_URL: "http://localhost:8080/realms/crash-game"
       KEYCLOAK_JWKS_URL: "http://keycloak:8080/realms/crash-game/protocol/openid-connect/certs"
       KEYCLOAK_AUDIENCE: "crash-game-client"
@@ -169,6 +171,7 @@ services:
       KEYCLOAK_CLIENT_SECRET: ""
       NEXT_PUBLIC_API_BASE_URL: "http://localhost:8000"
       NEXT_PUBLIC_WS_BASE_URL: "http://localhost:8000"
+      NEXT_PUBLIC_BETTING_WINDOW_MS: "10000"
     depends_on:
       kong:
         condition: service_healthy
