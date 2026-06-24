@@ -27,7 +27,7 @@ export function WalletPlaceholder() {
   });
 
   return (
-    <section className="flex-1 flex flex-col w-full rounded-lg border border-zinc-800 bg-zinc-950/80 p-5">
+    <section className="flex-1 flex flex-col w-full max-w-7xl rounded-lg border border-zinc-800 bg-zinc-950/80 p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">

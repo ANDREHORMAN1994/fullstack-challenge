@@ -47,6 +47,8 @@ export async function verifyCrashRound(input: {
 
   return {
     serverSeedHash,
+    hmac,
+    hmacMessage: `${input.clientSeed}:${input.nonce}`,
     crashMultiplierBps,
     hashMatches: serverSeedHash === input.serverSeedHash,
     multiplierMatches: crashMultiplierBps === input.crashMultiplierBps,

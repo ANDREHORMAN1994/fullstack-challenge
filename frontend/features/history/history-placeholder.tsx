@@ -1,7 +1,15 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Check, CheckCircle2, Copy, History, ShieldCheck, XCircle } from "lucide-react";
+import {
+  Check,
+  CheckCircle2,
+  Copy,
+  ExternalLink,
+  History,
+  ShieldCheck,
+  XCircle,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   getCrashPointClassName,
@@ -37,6 +45,9 @@ export function HistoryPlaceholder() {
             <h1 className="mt-1 text-3xl font-black text-zinc-50">Histórico de rodadas</h1>
             <p className="mt-2 text-sm text-zinc-500">
               Selecione uma rodada para explicar hash, seed e verificação.
+            </p>
+            <p className="mt-2 text-xs text-zinc-500">
+              Verde indica crash em 2.00x ou acima. Vermelho indica crash abaixo de 2.00x.
             </p>
           </div>
           <History size={28} className="text-emerald-300" />
@@ -166,18 +177,18 @@ function ProvablyFairDetails({ round }: { round?: Round }) {
       {round ? (
         <dl className="space-y-4 text-sm">
           <div>
-            <dt className="text-zinc-500">Round ID</dt>
+            <dt className="text-zinc-500">Plain text (clientSeed:nonce)</dt>
             <div className="flex items-center justify-between">
               <dd className="break-all font-mono text-xs text-zinc-300 truncate">
-                {round.roundId}
+                {`${round.clientSeed}:${round.nonce}`}
               </dd>
               <button
                 type="button"
-                onClick={() => handleCopy(round.roundId)}
+                onClick={() => handleCopy(`${round.clientSeed}:${round.nonce}`)}
                 className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition-colors"
                 title="Copiar ID da rodada"
               >
-                {copied && copiedText === round.roundId ? (
+                {copied && copiedText === `${round.clientSeed}:${round.nonce}` ? (
                   <Check size={14} className="text-emerald-400" />
                 ) : (
                   <Copy size={14} />
@@ -186,7 +197,7 @@ function ProvablyFairDetails({ round }: { round?: Round }) {
             </div>
           </div>
           <div>
-            <dt className="text-zinc-500">Hash antes do resultado</dt>
+            <dt className="text-zinc-500">Hash SHA-256 antes do resultado</dt>
             <div className="flex items-center justify-between">
               <dd className="break-all font-mono text-xs text-emerald-200 truncate">
                 {round.serverSeedHash}
@@ -203,6 +214,46 @@ function ProvablyFairDetails({ round }: { round?: Round }) {
                   <Copy size={14} />
                 )}
               </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 rounded-md bg-black/30 p-3">
+            <div>
+              <dt className="text-zinc-500">Client seed</dt>
+              <div className="flex items-center justify-between">
+                <dd className="truncate font-mono text-xs text-zinc-300" title={round.clientSeed}>
+                  {round.clientSeed}
+                </dd>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(round.clientSeed)}
+                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition-colors"
+                  title="Copiar ID da rodada"
+                >
+                  {copied && copiedText === round.clientSeed ? (
+                    <Check size={14} className="text-emerald-400" />
+                  ) : (
+                    <Copy size={14} />
+                  )}
+                </button>
+              </div>
+            </div>
+            <div>
+              <dt className="text-zinc-500">Nonce</dt>
+              <div className="flex items-center justify-between">
+                <dd className="font-mono text-xs text-zinc-300 truncate">{round.nonce}</dd>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(String(round.nonce))}
+                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition-colors"
+                  title="Copiar ID da rodada"
+                >
+                  {copied && copiedText === String(round.nonce) ? (
+                    <Check size={14} className="text-emerald-400" />
+                  ) : (
+                    <Copy size={14} />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 rounded-md bg-black/30 p-3">
@@ -235,7 +286,7 @@ function ProvablyFairDetails({ round }: { round?: Round }) {
               <div>
                 <dt className="text-zinc-500">Server seed revelada</dt>
                 <div className="flex items-center justify-between">
-                  <dd className="break-all font-mono text-xs text-zinc-300 truncate">
+                  <dd className="break-all font-mono text-xs text-amber-200 truncate">
                     {verificationQuery.data.serverSeed}
                   </dd>
                   <button
@@ -245,6 +296,27 @@ function ProvablyFairDetails({ round }: { round?: Round }) {
                     title="Copiar ID da rodada"
                   >
                     {copied && copiedText === verificationQuery.data.serverSeed ? (
+                      <Check size={14} className="text-emerald-400" />
+                    ) : (
+                      <Copy size={14} />
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div className="rounded-md bg-black/30 p-3">
+                <dt className="text-zinc-500">HMAC-SHA256 calculado</dt>
+                <div className="mt-1 flex items-center justify-between">
+                  <dd className="truncate font-mono text-xs text-zinc-300" title={localCheck?.hmac}>
+                    {localCheck?.hmac}
+                  </dd>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(localCheck?.hmac ?? "")}
+                    className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+                    title="Copiar HMAC calculado"
+                    disabled={!localCheck?.hmac}
+                  >
+                    {copied && copiedText === localCheck?.hmac ? (
                       <Check size={14} className="text-emerald-400" />
                     ) : (
                       <Copy size={14} />
@@ -273,6 +345,15 @@ function ProvablyFairDetails({ round }: { round?: Round }) {
                   </dd>
                 </div>
               </div>
+              <a
+                href="https://www.devglan.com/online-tools/hmac-sha256-online"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-emerald-300/40 hover:text-emerald-200"
+              >
+                <ExternalLink size={14} />
+                Validar HMAC-SHA256 externamente
+              </a>
             </>
           ) : null}
         </dl>

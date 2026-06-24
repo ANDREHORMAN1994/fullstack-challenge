@@ -80,7 +80,7 @@ export function CrashChart({ multiplierBps, status, crashedAtBps }: CrashChartPr
   }, [displayCrashedAtBps, displayMultiplierBps, status]);
 
   return (
-    <section className="relative min-h-1/2 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950/80">
+    <section className="relative h-[280px] overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950/80 sm:h-[340px] lg:h-auto lg:flex-1">
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
       <div className="absolute left-5 top-4">
         <p className="w-fit pr-2 text-xs font-medium uppercase tracking-[0.18em] text-zinc-500 bg-zinc-950">Multiplicador</p>

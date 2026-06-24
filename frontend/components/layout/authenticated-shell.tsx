@@ -89,7 +89,7 @@ export function AuthenticatedShell({ children }: { children: React.ReactNode }) 
           </Link>
           <Menu size={20} className="text-zinc-400" />
         </div>
-        <nav className="mt-3 grid grid-cols-5 gap-1">
+        <nav className="mt-3 grid grid-cols-4 gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);

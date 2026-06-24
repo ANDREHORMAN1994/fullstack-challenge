@@ -8,11 +8,11 @@ export function MyBets({ bets, hasSlice }: { bets: Bet[]; hasSlice?: boolean }) 
   const router = useRouter();
 
   return (
-    <section className="w-full h-full flex-1 rounded-lg border border-zinc-800 bg-zinc-950/80 p-4 overflow-auto">
+    <section className="w-full h-full flex-1 flex flex-col rounded-lg border border-zinc-800 bg-zinc-950/80 p-4 overflow-auto">
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-zinc-400">
         Minhas últimas apostas
       </h2>
-      <div className="space-y-2 min-h-0 flex flex-col justify-between">
+      <div className="flex-1 space-y-2 min-h-0 flex flex-col justify-start">
         {(hasSlice ? bets.slice(0, 5) : bets).map((bet) => (
           <div
             key={bet.betId}
@@ -30,19 +30,19 @@ export function MyBets({ bets, hasSlice }: { bets: Bet[]; hasSlice?: boolean }) 
             </span>
           </div>
         ))}
-        {hasSlice ? (
-          <Button
-            variant="ghost"
-            onClick={() => router.push("/history")}
-            className="w-full flex items-center justify-center self-end"
-          >
-            Verifique Histórico completo
-          </Button>
-        ) : null}
         {bets.length === 0 ? (
           <p className="py-4 text-center text-sm text-zinc-500">Sem apostas ainda</p>
         ) : null}
       </div>
+      {hasSlice ? (
+        <Button
+          variant="ghost"
+          onClick={() => router.push("/history")}
+          className="w-full flex items-center justify-center self-end"
+        >
+          Verifique Histórico completo
+        </Button>
+      ) : null}
     </section>
   );
 }

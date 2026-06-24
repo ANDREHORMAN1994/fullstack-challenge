@@ -32,7 +32,7 @@ export function MyBetsPlaceholder() {
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-zinc-800">
-        <div className={cn("hidden min-w-220 gap-4 border-b border-zinc-800 bg-black/35 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500 md:grid", tableGridClass)}>
+        <div className={cn("hidden md:min-w-220 md:gap-4 border-b border-zinc-800 bg-black/35 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500 md:grid", tableGridClass)}>
           <span>Round</span>
           <span className="text-right">Valor</span>
           <span>Status</span>
@@ -66,7 +66,7 @@ export function MyBetsPlaceholder() {
           {bets.map((bet) => (
             <div
               key={bet.betId}
-              className={cn("grid min-w-220 gap-4 px-4 py-4 text-sm md:grid md:items-center", tableGridClass)}
+              className={cn("grid md:min-w-220 md:gap-4 px-4 py-4 text-sm md:grid md:items-center", tableGridClass)}
             >
               <span className="min-w-0 truncate font-mono text-xs text-zinc-500" title={bet.roundId}>
                 {shortId(bet.roundId)}

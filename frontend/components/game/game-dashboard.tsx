@@ -309,8 +309,8 @@ export function GameDashboard() {
   ]);
 
   return (
-    <main className="flex-1 grid w-full min-h-0 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <section className="space-y-4 min-h-0 flex-1 h-full flex flex-col">
+    <main className="grid w-full gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="flex flex-col space-y-4 lg:min-h-0 lg:h-full">
         <header className="flex flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-950/70 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">
@@ -348,7 +348,7 @@ export function GameDashboard() {
         <LiveBets bets={liveBets} />
       </section>
 
-      <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start min-h-0 flex-1 h-full flex flex-col">
+      <aside className="flex flex-col space-y-4 lg:sticky lg:top-6 lg:self-start lg:min-h-0 lg:h-full">
         <PlayerPanel
           username={username}
           isAuthenticated={authStatus === "authenticated"}
@@ -711,14 +711,14 @@ function SeedPanel({
 
 function LiveBets({ bets }: { bets: LiveBet[] }) {
   return (
-    <section className="flex-1 h-full rounded-lg border border-zinc-800 bg-zinc-950/80 p-4">
+    <section className="rounded-lg border border-zinc-800 bg-zinc-950/80 p-4 lg:flex-1 lg:h-full">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-400">
           Apostas da rodada
         </h2>
         <span className="text-xs text-zinc-500">{bets.length} jogadores</span>
       </div>
-      <div className={`h-full min-h-0 flex flex-col ${bets.length === 0 ? 'justify-center': 'justify-start'} space-y-2 overflow-auto`}>
+      <div className={`flex flex-col ${bets.length === 0 ? 'justify-center': 'justify-start'} space-y-2 overflow-auto lg:h-full lg:min-h-0`}>
         {bets.length === 0 ? (
           <p className="py-8 text-center text-sm text-zinc-500">Aguardando apostas...</p>
         ) : null}
