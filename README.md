@@ -1,4 +1,10 @@
-# Desafio Full-stack - Crash Game 🎮
+<h1 align="center">
+  <span>Crash Game 🎮</span>
+</h1>
+
+<p align="center">
+  <img alt="design do projeto" width="800px" src="./image.png" />
+<p>
 
 ---
 
