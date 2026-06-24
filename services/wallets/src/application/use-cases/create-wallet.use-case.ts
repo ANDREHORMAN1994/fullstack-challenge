@@ -26,11 +26,15 @@ export class CreateWalletUseCase {
 
     const walletId = `wallet-${this.newId.generate()}`;
     const now = this.newDate.now();
+    const demoInitialBalanceCents =
+      process.env.WALLETS_DEMO_INITIAL_CREDIT_ENABLED === "true"
+        ? BigInt(process.env.WALLETS_DEMO_INITIAL_BALANCE_CENTS ?? "0")
+        : 0n;
 
     const newWallet = new Wallet({
       id: walletId,
       playerId: input.playerId,
-      balanceCents: 0n,
+      balanceCents: demoInitialBalanceCents,
       currency: input?.currency ?? "BRL",
       createdAt: now,
       updatedAt: now,

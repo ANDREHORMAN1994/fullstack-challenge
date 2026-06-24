@@ -144,6 +144,8 @@ services:
       KEYCLOAK_ISSUER_URL: "http://localhost:8080/realms/crash-game"
       KEYCLOAK_JWKS_URL: "http://keycloak:8080/realms/crash-game/protocol/openid-connect/certs"
       KEYCLOAK_AUDIENCE: "crash-game-client"
+      WALLETS_DEMO_INITIAL_CREDIT_ENABLED: "true"
+      WALLETS_DEMO_INITIAL_BALANCE_CENTS: "100000"
     depends_on:
       postgres:
         condition: service_healthy

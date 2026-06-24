@@ -1,5 +1,5 @@
 import { CreateWalletUseCase } from "@/application/use-cases/create-wallet.use-case";
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 import { FakeClock, FakeIdGenerator, FakeWalletsRepository } from "../../utils/use-case-fakes";
 
 const makeInstances = (ids: string[]) => {
@@ -12,6 +12,14 @@ const makeInstances = (ids: string[]) => {
 };
 
 describe("Check CreateWalletUseCase works", () => {
+  const originalDemoCreditEnabled = process.env.WALLETS_DEMO_INITIAL_CREDIT_ENABLED;
+  const originalDemoBalance = process.env.WALLETS_DEMO_INITIAL_BALANCE_CENTS;
+
+  afterEach(() => {
+    process.env.WALLETS_DEMO_INITIAL_CREDIT_ENABLED = originalDemoCreditEnabled;
+    process.env.WALLETS_DEMO_INITIAL_BALANCE_CENTS = originalDemoBalance;
+  });
+
   it("Check wallets fields are correct", async () => {
     const { repository, createWalletUseCase } = makeInstances(["123"]);
 
@@ -20,11 +28,16 @@ describe("Check CreateWalletUseCase works", () => {
       currency: "BRL",
     });
 
+    const demoInitialBalanceCents =
+      process.env.WALLETS_DEMO_INITIAL_CREDIT_ENABLED === "true"
+        ? BigInt(process.env.WALLETS_DEMO_INITIAL_BALANCE_CENTS ?? "0")
+        : 0n;
+
     const wallet = await repository.findById("wallet-123");
     expect(wallet).not.toBeNull();
     expect(wallet).toHaveProperty("currency", "BRL");
     expect(wallet).toHaveProperty("playerId", "player-123");
-    expect(wallet?.getBalanceCents()).toBe(0n);
+    expect(wallet?.getBalanceCents()).toBe(demoInitialBalanceCents);
   });
 
   it("check if repository has 1 wallet saved", async () => {
@@ -85,5 +98,17 @@ describe("Check CreateWalletUseCase works", () => {
     });
 
     expect(wallet.currency).toBe("BRL");
+  });
+
+  it("creates a wallet with demo credit when evaluation seed is enabled", async () => {
+    process.env.WALLETS_DEMO_INITIAL_CREDIT_ENABLED = "true";
+    process.env.WALLETS_DEMO_INITIAL_BALANCE_CENTS = "100000";
+    const { createWalletUseCase } = makeInstances(["123"]);
+
+    const wallet = await createWalletUseCase.execute({
+      playerId: "player-123",
+    });
+
+    expect(wallet.getBalanceCents()).toBe(100000n);
   });
 });

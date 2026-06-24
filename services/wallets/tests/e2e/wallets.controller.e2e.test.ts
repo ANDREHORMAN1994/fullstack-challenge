@@ -73,9 +73,14 @@ describe("WalletsController E2E", () => {
 
     const body = await response.json();
 
+    const demoInitialBalanceCents =
+      process.env.WALLETS_DEMO_INITIAL_CREDIT_ENABLED === "true"
+        ? BigInt(process.env.WALLETS_DEMO_INITIAL_BALANCE_CENTS ?? "0")
+        : 0n;
+
     expect(body).toHaveProperty("id");
     expect(body).toHaveProperty("playerId", "player-1");
-    expect(body).toHaveProperty("balanceCents", "0");
+    expect(body).toHaveProperty("balanceCents", String(demoInitialBalanceCents));
     expect(body).toHaveProperty("currency", "BRL");
     expect(body).toHaveProperty("createdAt");
     expect(body).toHaveProperty("updatedAt");
@@ -98,9 +103,14 @@ describe("WalletsController E2E", () => {
 
     const body = await response.json();
 
+    const demoInitialBalanceCents =
+      process.env.WALLETS_DEMO_INITIAL_CREDIT_ENABLED === "true"
+        ? BigInt(process.env.WALLETS_DEMO_INITIAL_BALANCE_CENTS ?? "0")
+        : 0n;
+
     expect(body).toHaveProperty("id");
     expect(body).toHaveProperty("playerId", "player-1");
-    expect(body).toHaveProperty("balanceCents", "0");
+    expect(body).toHaveProperty("balanceCents", String(demoInitialBalanceCents));
     expect(body).toHaveProperty("currency", "BRL");
     expect(body).toHaveProperty("createdAt");
     expect(body).toHaveProperty("updatedAt");

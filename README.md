@@ -52,6 +52,10 @@ Usuário de teste:
 | Login   | `player`    |
 | Senha   | `player123` |
 
+Carteiras novas no ambiente Docker de avaliação recebem saldo demo real de `100000`
+centavos (`R$ 1.000,00`). Esse seed é feito pelo Wallet Service somente quando
+`WALLETS_DEMO_INITIAL_CREDIT_ENABLED=true`; desative essa flag fora do fluxo demo.
+
 ### Fluxo manual de avaliação
 
 1. Acesse `http://localhost:3000`.
