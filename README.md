@@ -67,12 +67,7 @@ Usuário de teste:
 | Senha   | `player123` | `player123` |
 
 Carteiras novas no ambiente Docker de avaliação recebem saldo demo real de `100000`
-centavos (`R$ 1.000,00`). Esse seed é feito pelo Wallet Service somente quando
-`WALLETS_DEMO_INITIAL_CREDIT_ENABLED=true`; desative essa flag fora do fluxo demo.
-
-No Docker, o login OIDC usa `http://localhost:8080` no navegador e
-`http://keycloak:8080` internamente entre containers. Isso evita passos manuais de
-DNS/hosts e mantém o fluxo de avaliação em `http://localhost:3000`.
+centavos (`R$ 1.000,00`).
 
 > Observação: o Keycloak importa `docker/keycloak/realm-export.json` no bootstrap.
 > Se alterar usuários/clients depois que o container já subiu, recrie o serviço ou
@@ -108,37 +103,12 @@ cp services/wallets/.env.example services/wallets/.env
 
 Para rodar fora do Docker, use as URLs localhost indicadas nos `.env.example`:
 
-- `DATABASE_URL=postgresql://admin:admin@localhost:5432/games` no Games Service
-- `DATABASE_URL=postgresql://admin:admin@localhost:5432/wallets` no Wallet Service
-- `RABBITMQ_URL=amqp://admin:admin@localhost:5672`
-- `NEXT_PUBLIC_GAMES_API_BASE_URL=http://localhost:4001`
-- `NEXT_PUBLIC_WALLETS_API_BASE_URL=http://localhost:4002`
-- `NEXT_PUBLIC_WS_BASE_URL=http://localhost:4001`
-
 Depois rode:
 
 ```bash
 cd services/games && bun run dev
 cd services/wallets && bun run dev
 cd frontend && bun run dev
-```
-
-### Comandos de qualidade
-
-```bash
-bun run contracts:typecheck
-bun run games:test:all
-bun run wallets:test:all
-bun run frontend:typecheck
-bun run frontend:build
-cd frontend && bun run test:e2e
-```
-
-Para o Playwright, na primeira execução da máquina:
-
-```bash
-cd frontend
-bunx playwright install chromium
 ```
 
 ---
