@@ -152,7 +152,7 @@ describe("AutomaticRoundEngineService", () => {
     const roundsRepository = new FakeRoundsRepository(crashedRound);
     const engine = makeEngine(roundsRepository);
 
-    await engine.tick(new Date("2026-01-01T00:00:26.999Z"));
+    await engine.tick(new Date("2026-01-01T00:00:29.999Z"));
 
     const currentRound = await roundsRepository.findCurrent();
 
@@ -170,7 +170,7 @@ describe("AutomaticRoundEngineService", () => {
     await betsRepository.create(makePlacedBet());
     const engine = makeEngine(roundsRepository, betsRepository);
 
-    await engine.tick(new Date("2026-01-01T00:00:27.000Z"));
+    await engine.tick(new Date("2026-01-01T00:00:30.000Z"));
 
     const currentRound = await roundsRepository.findCurrent();
     const bet = await betsRepository.findByRoundIdAndPlayerId("round-1", "player-1");
